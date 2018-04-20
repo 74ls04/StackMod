@@ -44,20 +44,20 @@ enum Command_list {
 };
 
 enum Motor_cmd {
-	FORWARD = 70,
-	REVERSE = 71,
-	BACK = 66,
-	TURN = 84,
-	STOP = 83,
-	LEFT = 76,
-	RIGHT = 82,
-	VEER = 86,
-	DRIVE = 68,
-	CONFIG = 67,
-	ENABLE = 72,
-	DISABLE = 73,
-	ENABLED = 48,
-	DISABLED = 49
+    FORWARD = 70,
+    REVERSE = 71,
+    BACK = 66,
+    TURN = 84,
+    STOP = 83,
+    LEFT = 76,
+    RIGHT = 82,
+    VEER = 86,
+    DRIVE = 68,
+    CONFIG = 67,
+    ENABLE = 72,
+    DISABLE = 73,
+    ENABLED = 48,
+    DISABLED = 49
 };
 
 /**** Prototypes ****/
@@ -110,31 +110,31 @@ void setup() {
     // Change PWM frequency to 31250 
     // https://playground.arduino.cc/Main/TimerPWMCheatsheet
 
-	TCCR1B = TCCR1B & 0b11111000 | 0x01;
-	TCCR2B = TCCR2B & 0b11111000 | 0x01;
+    TCCR1B = TCCR1B & 0b11111000 | 0x01;
+    TCCR2B = TCCR2B & 0b11111000 | 0x01;
 
-	read_settings();
+    read_settings();
 
     memset(motorSpeeds, 0, sizeof(motorSpeeds)); // Reset speed values
 
-	Wire.begin(I2C_ADDRESS);                // join i2c bus with address 0x30
-	Wire.onReceive(receive_i2c_packet); // register event
-	Serial.begin(9600);           // start serial for output
+    Wire.begin(I2C_ADDRESS);                // join i2c bus with address 0x30
+    Wire.onReceive(receive_i2c_packet); // register event
+    Serial.begin(9600);           // start serial for output
 }
 
 void configure_pins() {
-	pinMode(LF_1, OUTPUT);
-	pinMode(LF_2, OUTPUT);
-	pinMode(LB_1, OUTPUT);
-	pinMode(LB_2, OUTPUT);
-	pinMode(RF_1, OUTPUT);
-	pinMode(RF_2, OUTPUT);
-	pinMode(RB_1, OUTPUT);
-	pinMode(RB_2, OUTPUT);
-	pinMode(M1, OUTPUT);
-	pinMode(M2, OUTPUT);
-	pinMode(M3, OUTPUT);
-	pinMode(M4, OUTPUT);
+    pinMode(LF_1, OUTPUT);
+    pinMode(LF_2, OUTPUT);
+    pinMode(LB_1, OUTPUT);
+    pinMode(LB_2, OUTPUT);
+    pinMode(RF_1, OUTPUT);
+    pinMode(RF_2, OUTPUT);
+    pinMode(RB_1, OUTPUT);
+    pinMode(RB_2, OUTPUT);
+    pinMode(M1, OUTPUT);
+    pinMode(M2, OUTPUT);
+    pinMode(M3, OUTPUT);
+    pinMode(M4, OUTPUT);
 }
 
 void receive_serial_packet() {
@@ -208,7 +208,7 @@ void loop() {
     receive_serial_packet();
     process_packet();
 
-	delay(50);
+    delay(50);
 }
 
 
@@ -220,52 +220,52 @@ int calculate_checksum(String packet) {
 }
 
 int process_motor_speed(int left_speed, int right_speed) {
-	
-	if (!MOTORSENABLED) {
-		Serial.println("Motors are disabled!");
-		digitalWrite(M1, LOW);
-		digitalWrite(M2, LOW);
-		digitalWrite(M3, LOW);
-		digitalWrite(M4, LOW);
-		return 1;
-	}
+    
+    if (!MOTORSENABLED) {
+        Serial.println("Motors are disabled!");
+        digitalWrite(M1, LOW);
+        digitalWrite(M2, LOW);
+        digitalWrite(M3, LOW);
+        digitalWrite(M4, LOW);
+        return 1;
+    }
 
-	NEWSETPOINT = true;
+    NEWSETPOINT = true;
 
-	int left_adjusted_speed = left_speed - 50;
-	int right_adjusted_speed = right_speed - 50;
-	int left_current_output = motorSpeeds[0];
-	int right_current_output = motorSpeeds[2];
+    int left_adjusted_speed = left_speed - 50;
+    int right_adjusted_speed = right_speed - 50;
+    int left_current_output = motorSpeeds[0];
+    int right_current_output = motorSpeeds[2];
 
-	if (left_adjusted_speed < 0) {
-		set_dir(LEFT, REVERSE);
-		Serial.println("Reverse");
-	}
+    if (left_adjusted_speed < 0) {
+        set_dir(LEFT, REVERSE);
+        Serial.println("Reverse");
+    }
 
-	if (right_adjusted_speed < 0) {
-		set_dir(RIGHT, REVERSE);
-		Serial.println("Reverse");
-	}
+    if (right_adjusted_speed < 0) {
+        set_dir(RIGHT, REVERSE);
+        Serial.println("Reverse");
+    }
 
-	if (left_adjusted_speed == 0) {
-		set_dir(LEFT, STOP);
-	}
+    if (left_adjusted_speed == 0) {
+        set_dir(LEFT, STOP);
+    }
 
-	if (right_adjusted_speed == 0) {
-		set_dir(RIGHT, STOP);
-	}
+    if (right_adjusted_speed == 0) {
+        set_dir(RIGHT, STOP);
+    }
 
-	if (left_adjusted_speed > 0) {
-		Serial.println("Forward");
-		set_dir(LEFT, FORWARD);
-	}
+    if (left_adjusted_speed > 0) {
+        Serial.println("Forward");
+        set_dir(LEFT, FORWARD);
+    }
 
-	if (right_adjusted_speed > 0) {
-		Serial.println("Forward");
-		set_dir(RIGHT, FORWARD);
-	}
+    if (right_adjusted_speed > 0) {
+        Serial.println("Forward");
+        set_dir(RIGHT, FORWARD);
+    }
 
-	ramp_motors(abs(left_adjusted_speed), abs(right_adjusted_speed), left_current_output, right_current_output);
+    ramp_motors(abs(left_adjusted_speed), abs(right_adjusted_speed), left_current_output, right_current_output);
 
 }
 
@@ -293,23 +293,23 @@ void process_packet() {
                 case MOTOR:
                     //8HcMdd
                     if (packet_size == 6) {
-						process_motor_speed((int)packet_buffer[4], (int)packet_buffer[5]);
+                        process_motor_speed((int)packet_buffer[4], (int)packet_buffer[5]);
                     } else {
                         Serial.println("Invalid packet size for motor command");
                         return;
-					}
-				case ENABLE:	
-					//8HcE1
-					if (packet_size == 5) {
-						if (packet_buffer[4] == ENABLED) {
-							MOTORSENABLED = true;
-						} else if (packet_buffer[4] == DISABLED) {
-							MOTORSENABLED = false;
-						}
-					} else {
+                    }
+                case ENABLE:	
+                    //8HcE1
+                    if (packet_size == 5) {
+                        if (packet_buffer[4] == ENABLED) {
+                            MOTORSENABLED = true;
+                        } else if (packet_buffer[4] == DISABLED) {
+                            MOTORSENABLED = false;
+                        }
+                    } else {
                         Serial.println("Invalid packet size for enable command");
                         return;						
-					}
+                    }
 
                 default:
                     break;
@@ -335,72 +335,72 @@ void process_packet() {
  * 
  **/
 void ramp_motors(int target_left, int target_right, int output_left, int output_right) {
-	int rate = 1;
-	NEWSETPOINT = false;
-	while (output_left != target_left || output_right != target_right) {
-		if ((target_left - output_left) > rate) {
-			output_left += rate;
-			motorSpeeds[0] = output_left - M1_PAD >= 0 ? output_left - M1_PAD : 0;
-			motorSpeeds[1] = output_left - M2_PAD >= 0 ? output_left - M2_PAD : 0;
-		}  else if ((output_left - target_left) > rate) {
-			output_left -= rate;
-			motorSpeeds[0] = output_left - M1_PAD >= 0 ? output_left - M1_PAD : 0;
-			motorSpeeds[1] = output_left - M2_PAD >= 0 ? output_left - M2_PAD : 0;
-		} else {
-			output_left =target_left;
-			motorSpeeds[0] = output_left - M1_PAD >= 0 ? output_left - M1_PAD : 0;
-			motorSpeeds[1] = output_left - M2_PAD >= 0 ? output_left - M2_PAD : 0;
-		}
-		
-		if ((target_right - output_right) > rate) {
-			output_right += rate;
-			motorSpeeds[2] = output_right - M3_PAD >= 0 ? output_right - M3_PAD : 0;
-			motorSpeeds[3] = output_right - M4_PAD >= 0 ? output_right - M4_PAD : 0;
-		} else if ((output_right - target_right) > rate) {
-			output_right -= rate;
-			motorSpeeds[2] = output_right - M3_PAD >= 0 ? output_right - M3_PAD : 0;
-			motorSpeeds[3] = output_right - M4_PAD >= 0 ? output_right - M4_PAD : 0;
-		} else {
-			output_right = target_right;
-			motorSpeeds[2] = output_right - M3_PAD >= 0 ? output_right - M3_PAD : 0;
-			motorSpeeds[3] = output_right - M4_PAD >= 0 ? output_right - M4_PAD : 0;
-		}
+    int rate = 1;
+    NEWSETPOINT = false;
+    while (output_left != target_left || output_right != target_right) {
+        if ((target_left - output_left) > rate) {
+            output_left += rate;
+            motorSpeeds[0] = output_left - M1_PAD >= 0 ? output_left - M1_PAD : 0;
+            motorSpeeds[1] = output_left - M2_PAD >= 0 ? output_left - M2_PAD : 0;
+        }  else if ((output_left - target_left) > rate) {
+            output_left -= rate;
+            motorSpeeds[0] = output_left - M1_PAD >= 0 ? output_left - M1_PAD : 0;
+            motorSpeeds[1] = output_left - M2_PAD >= 0 ? output_left - M2_PAD : 0;
+        } else {
+            output_left =target_left;
+            motorSpeeds[0] = output_left - M1_PAD >= 0 ? output_left - M1_PAD : 0;
+            motorSpeeds[1] = output_left - M2_PAD >= 0 ? output_left - M2_PAD : 0;
+        }
+        
+        if ((target_right - output_right) > rate) {
+            output_right += rate;
+            motorSpeeds[2] = output_right - M3_PAD >= 0 ? output_right - M3_PAD : 0;
+            motorSpeeds[3] = output_right - M4_PAD >= 0 ? output_right - M4_PAD : 0;
+        } else if ((output_right - target_right) > rate) {
+            output_right -= rate;
+            motorSpeeds[2] = output_right - M3_PAD >= 0 ? output_right - M3_PAD : 0;
+            motorSpeeds[3] = output_right - M4_PAD >= 0 ? output_right - M4_PAD : 0;
+        } else {
+            output_right = target_right;
+            motorSpeeds[2] = output_right - M3_PAD >= 0 ? output_right - M3_PAD : 0;
+            motorSpeeds[3] = output_right - M4_PAD >= 0 ? output_right - M4_PAD : 0;
+        }
 
-		drive();
-		
-		if (NEWSETPOINT) break;
+        drive();
+        
+        if (NEWSETPOINT) break;
 
-		Serial.print(map(output_left, 0, 50, 150, 255));
-		Serial.print(" | ");
-		Serial.println(map(output_right, 0, 50, 150, 255));
-		delay(20);
+        Serial.print(map(output_left, 0, 50, 150, 255));
+        Serial.print(" | ");
+        Serial.println(map(output_right, 0, 50, 150, 255));
+        delay(20);
 
-		
-	}
+        
+    }
 
 }
 
 void drive() {
-	analogWrite(M1, map(motorSpeeds[0], 0, 50, 150, 255));
-	analogWrite(M2, map(motorSpeeds[1], 0, 50, 150, 255));
-	analogWrite(M3, map(motorSpeeds[2], 0, 50, 150, 255));
-	analogWrite(M4, map(motorSpeeds[3], 0, 50, 150, 255));
+    analogWrite(M1, map(motorSpeeds[0], 0, 50, 150, 255));
+    analogWrite(M2, map(motorSpeeds[1], 0, 50, 150, 255));
+    analogWrite(M3, map(motorSpeeds[2], 0, 50, 150, 255));
+    analogWrite(M4, map(motorSpeeds[3], 0, 50, 150, 255));
 }
 
 void store_settings(int ramp, int slowSetpoint, int medSetpoint, int fastSetpoint) {
-	EEPROM.write(RAMP_ADDR, ramp);
-	EEPROM.write(SLOW_ADDR, slowSetpoint);
-	EEPROM.write(MED_ADDR, medSetpoint);
-	EEPROM.write(FAST_ADDR, fastSetpoint);
+    EEPROM.write(RAMP_ADDR, ramp);
+    EEPROM.write(SLOW_ADDR, slowSetpoint);
+    EEPROM.write(MED_ADDR, medSetpoint);
+    EEPROM.write(FAST_ADDR, fastSetpoint);
 
-	read_settings();
+    read_settings();
 }
 
 void read_settings() {
-	ramp = EEPROM.read(RAMP_ADDR);
-	slowSetpoint = EEPROM.read(RAMP_ADDR);
-	medSetpoint = EEPROM.read(RAMP_ADDR);
-	fastSetpoint = EEPROM.read(RAMP_ADDR);
+    ramp = EEPROM.read(RAMP_ADDR);
+    slowSetpoint = EEPROM.read(RAMP_ADDR);
+    medSetpoint = EEPROM.read(RAMP_ADDR);
+    fastSetpoint = EEPROM.read(RAMP_ADDR);
 };
 
 /**
@@ -409,142 +409,142 @@ void read_settings() {
 
 /*
 void parse_cmd(int command) {
-	switch (command) {
-		case FORWARD:
-	);
-			b_dirreak;
+    switch (command) {
+        case FORWARD:
+    );
+            b_dirreak;
 
-		case BACK:
-			back_dir();
-			break;
+        case BACK:
+            back_dir();
+            break;
 
-		case TURN:
-			if (controlReg[DIR] == LEFT) {
-	();
-			}
+        case TURN:
+            if (controlReg[DIR] == LEFT) {
+    ();
+            }
 _dir			if (controlReg[DIR] == RIGHT) {
-				turn_right_dir();
-			}
-			break;
-		case VEER:
-	);
-			i_dirf (controlReg[DIR] == LEFT) {
-	();
-			}
+                turn_right_dir();
+            }
+            break;
+        case VEER:
+    );
+            i_dirf (controlReg[DIR] == LEFT) {
+    ();
+            }
 _dir			if (controlReg[DIR] == RIGHT) {
-				turn_right_dir();
-			}
-			break;
-		case STOP:
-			set_brake();
-			break;
+                turn_right_dir();
+            }
+            break;
+        case STOP:
+            set_brake();
+            break;
 
-		default:
-			Serial.println("No Command");
-			break;
-		}
+        default:
+            Serial.println("No Command");
+            break;
+        }
 }
 */
 
 
 void set_dir(Motor_cmd motor, Motor_cmd direction) {
 
-	switch (motor) {
-		case LEFT:
-			if (direction == FORWARD) {
-					digitalWrite(LB_1, 0);
-					digitalWrite(LB_2, 1);
-					digitalWrite(LF_1, 0);
-					digitalWrite(LF_2, 1);
-			} else if (direction == REVERSE) {
-					digitalWrite(LB_1, 1);
-					digitalWrite(LB_2, 0);
-					digitalWrite(LF_1, 1);
-					digitalWrite(LF_2, 0);				
-			} else {
-					digitalWrite(LB_1, 0);
-					digitalWrite(LB_2, 0);
-					digitalWrite(LF_1, 0);
-					digitalWrite(LF_2, 0);
-			}
-		case RIGHT:
-			if (direction == FORWARD) {
-					digitalWrite(RB_1, 1);
-					digitalWrite(RB_2, 0);
-					digitalWrite(RF_1, 1);
-					digitalWrite(RF_2, 0);
-			} else if (direction == REVERSE) {
-					digitalWrite(RB_1, 0);
-					digitalWrite(RB_2, 1);
-					digitalWrite(RF_1, 0);
-					digitalWrite(RF_2, 1);			
-			} else {
-					digitalWrite(LB_1, 0);
-					digitalWrite(LB_2, 0);
-					digitalWrite(LF_1, 0);
-					digitalWrite(LF_2, 0);
-			}
-		default:
-			break;
-	}
+    switch (motor) {
+        case LEFT:
+            if (direction == FORWARD) {
+                    digitalWrite(LB_1, 0);
+                    digitalWrite(LB_2, 1);
+                    digitalWrite(LF_1, 0);
+                    digitalWrite(LF_2, 1);
+            } else if (direction == REVERSE) {
+                    digitalWrite(LB_1, 1);
+                    digitalWrite(LB_2, 0);
+                    digitalWrite(LF_1, 1);
+                    digitalWrite(LF_2, 0);				
+            } else {
+                    digitalWrite(LB_1, 0);
+                    digitalWrite(LB_2, 0);
+                    digitalWrite(LF_1, 0);
+                    digitalWrite(LF_2, 0);
+            }
+        case RIGHT:
+            if (direction == FORWARD) {
+                    digitalWrite(RB_1, 1);
+                    digitalWrite(RB_2, 0);
+                    digitalWrite(RF_1, 1);
+                    digitalWrite(RF_2, 0);
+            } else if (direction == REVERSE) {
+                    digitalWrite(RB_1, 0);
+                    digitalWrite(RB_2, 1);
+                    digitalWrite(RF_1, 0);
+                    digitalWrite(RF_2, 1);			
+            } else {
+                    digitalWrite(LB_1, 0);
+                    digitalWrite(LB_2, 0);
+                    digitalWrite(LF_1, 0);
+                    digitalWrite(LF_2, 0);
+            }
+        default:
+            break;
+    }
 }
 
 void forward_dir() {
-	digitalWrite(LB_1, 0);
-	digitalWrite(LB_2, 1);
-	digitalWrite(LF_1, 0);
-	digitalWrite(LF_2, 1);
+    digitalWrite(LB_1, 0);
+    digitalWrite(LB_2, 1);
+    digitalWrite(LF_1, 0);
+    digitalWrite(LF_2, 1);
 
-	digitalWrite(RB_1, 1);
-	digitalWrite(RB_2, 0);
-	digitalWrite(RF_1, 1);
-	digitalWrite(RF_2, 0);
+    digitalWrite(RB_1, 1);
+    digitalWrite(RB_2, 0);
+    digitalWrite(RF_1, 1);
+    digitalWrite(RF_2, 0);
 }
 
 void back_dir() {
-	digitalWrite(LB_1, 1);
-	digitalWrite(LB_2, 0);
-	digitalWrite(LF_1, 1);
-	digitalWrite(LF_2, 0);
+    digitalWrite(LB_1, 1);
+    digitalWrite(LB_2, 0);
+    digitalWrite(LF_1, 1);
+    digitalWrite(LF_2, 0);
 
-	digitalWrite(RB_1, 0);
-	digitalWrite(RB_2, 1);
-	digitalWrite(RF_1, 0);
-	digitalWrite(RF_2, 1);
+    digitalWrite(RB_1, 0);
+    digitalWrite(RB_2, 1);
+    digitalWrite(RF_1, 0);
+    digitalWrite(RF_2, 1);
 }
 
 void turn_left_dir() {
-	digitalWrite(LB_1, 1);
-	digitalWrite(LB_2, 0);
-	digitalWrite(LF_1, 1);
-	digitalWrite(LF_2, 0);
+    digitalWrite(LB_1, 1);
+    digitalWrite(LB_2, 0);
+    digitalWrite(LF_1, 1);
+    digitalWrite(LF_2, 0);
 
-	digitalWrite(RB_1, 1);
-	digitalWrite(RB_2, 0);
-	digitalWrite(RF_1, 1);
-	digitalWrite(RF_2, 0);
+    digitalWrite(RB_1, 1);
+    digitalWrite(RB_2, 0);
+    digitalWrite(RF_1, 1);
+    digitalWrite(RF_2, 0);
 }
 
 void turn_right_dir() {
-	digitalWrite(LB_1, 0);
-	digitalWrite(LB_2, 1);
-	digitalWrite(LF_1, 0);
-	digitalWrite(LF_2, 1);
+    digitalWrite(LB_1, 0);
+    digitalWrite(LB_2, 1);
+    digitalWrite(LF_1, 0);
+    digitalWrite(LF_2, 1);
 
-	digitalWrite(RB_1, 0);
-	digitalWrite(RB_2, 1);
-	digitalWrite(RF_1, 0);
-	digitalWrite(RF_2, 1);
+    digitalWrite(RB_1, 0);
+    digitalWrite(RB_2, 1);
+    digitalWrite(RF_1, 0);
+    digitalWrite(RF_2, 1);
 }
 
 void set_brake() {
-	digitalWrite(LB_1, 1);
-	digitalWrite(LB_2, 1);
-	digitalWrite(LF_1, 1);
-	digitalWrite(LF_2, 1);
+    digitalWrite(LB_1, 1);
+    digitalWrite(LB_2, 1);
+    digitalWrite(LF_1, 1);
+    digitalWrite(LF_2, 1);
 
-	digitalWrite(RB_1, 1);
-	digitalWrite(RB_2, 1);
-	digitalWrite(RF_1, 1);
-	digitalWrite(RF_2, 1);
+    digitalWrite(RB_1, 1);
+    digitalWrite(RB_2, 1);
+    digitalWrite(RF_1, 1);
+    digitalWrite(RF_2, 1);
 }
