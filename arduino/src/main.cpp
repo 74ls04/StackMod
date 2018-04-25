@@ -2,6 +2,8 @@
 #include <EEPROM.h>
 #include <Wire.h>
 
+#define DEBUGGING true
+
 #define  CTRL_REG_SIZE 4
 #define  I2C_ADDRESS 0x38
 
@@ -40,7 +42,8 @@
 
 /**** Enums ****/
 enum Command_list {
-    MOTOR = 77
+    MOTOR = 77,
+    ENABLE = 72
 };
 
 enum Motor_cmd {
@@ -54,7 +57,6 @@ enum Motor_cmd {
     VEER = 86,
     DRIVE = 68,
     CONFIG = 67,
-    ENABLE = 72,
     DISABLE = 73,
     ENABLED = 48,
     DISABLED = 49
@@ -77,6 +79,7 @@ void configure_pins();
 
 int calculate_checksum(String packet);
 void process_packet();
+void receive_i2c_packet(int numBytes);
 
 /**** Control Register ****/
 char controlReg[CTRL_REG_SIZE];
@@ -211,7 +214,7 @@ void loop() {
     delay(50);
 }
 
-
+// Future use
 int calculate_checksum(String packet) {
     int sum = 0;
     int c = packet.length();
@@ -219,49 +222,61 @@ int calculate_checksum(String packet) {
     return (sum % 95) + 32;
 }
 
-int process_motor_speed(int left_speed, int right_speed) {
+/**
+ * Parses motor values
+ **/
+void process_motor_speed(int left_speed, int right_speed) {
     
+    // Don't process any commands if the motors are disabled
     if (!MOTORSENABLED) {
-        Serial.println("Motors are disabled!");
+        if (DEBUGGING) Serial.println("Motors are disabled!");
         digitalWrite(M1, LOW);
         digitalWrite(M2, LOW);
         digitalWrite(M3, LOW);
         digitalWrite(M4, LOW);
-        return 1;
+        return;
     }
 
+    // New speed setpoint Breaks out of the motor ramping loop
     NEWSETPOINT = true;
 
+    /**
+     *  Speed values range from -50 to 50 but are sent as 0 to 100.
+     *  Subracting 50 gives us the correct values with the correct sign 
+     * **/
     int left_adjusted_speed = left_speed - 50;
     int right_adjusted_speed = right_speed - 50;
+
+    // Current spead of each motor side
     int left_current_output = motorSpeeds[0];
     int right_current_output = motorSpeeds[2];
 
+    // Set motor directions
     if (left_adjusted_speed < 0) {
         set_dir(LEFT, REVERSE);
-        Serial.println("Reverse");
-    }
-
-    if (right_adjusted_speed < 0) {
-        set_dir(RIGHT, REVERSE);
-        Serial.println("Reverse");
+        if (DEBUGGING) Serial.println("Reverse");
     }
 
     if (left_adjusted_speed == 0) {
         set_dir(LEFT, STOP);
     }
 
+    if (left_adjusted_speed > 0) {
+        if (DEBUGGING) Serial.println("Forward");
+        set_dir(LEFT, FORWARD);
+    }
+
+    if (right_adjusted_speed < 0) {
+        set_dir(RIGHT, REVERSE);
+        if (DEBUGGING) Serial.println("Reverse");
+    }
+
     if (right_adjusted_speed == 0) {
         set_dir(RIGHT, STOP);
     }
 
-    if (left_adjusted_speed > 0) {
-        Serial.println("Forward");
-        set_dir(LEFT, FORWARD);
-    }
-
     if (right_adjusted_speed > 0) {
-        Serial.println("Forward");
+        if (DEBUGGING) Serial.println("Forward");
         set_dir(RIGHT, FORWARD);
     }
 
@@ -270,9 +285,13 @@ int process_motor_speed(int left_speed, int right_speed) {
 }
 
 void process_packet() {
+
     if (NEWPACKET == true) {
+
         NEWPACKET = false;
-        Serial.println(packet_buffer);
+
+        if (DEBUGGING) Serial.println(packet_buffer);
+
         static byte packet_size = strlen(packet_buffer);
 
         if (packet_size < 4) return;
@@ -283,7 +302,7 @@ void process_packet() {
         
         // Address must match our address
         if (address != I2C_ADDRESS) { 
-            Serial.println("INVALID ADDRESS");
+            if (DEBUGGING) Serial.println("INVALID ADDRESS");
             return;
         }
 
@@ -295,7 +314,7 @@ void process_packet() {
                     if (packet_size == 6) {
                         process_motor_speed((int)packet_buffer[4], (int)packet_buffer[5]);
                     } else {
-                        Serial.println("Invalid packet size for motor command");
+                        if (DEBUGGING) Serial.println("Invalid packet size for motor command");
                         return;
                     }
                 case ENABLE:	
@@ -307,7 +326,7 @@ void process_packet() {
                             MOTORSENABLED = false;
                         }
                     } else {
-                        Serial.println("Invalid packet size for enable command");
+                        if (DEBUGGING) Serial.println("Invalid packet size for enable command");
                         return;						
                     }
 
@@ -315,13 +334,13 @@ void process_packet() {
                     break;
             }
         } else if (action == '?') {
-            Serial.println("This is a query");
+            if (DEBUGGING) Serial.println("This is a query");
         }
         
-        // Serial.print(motorSpeeds[0]);
-        // Serial.print(motorSpeeds[1]);
-        // Serial.print(motorSpeeds[2]);
-        // Serial.print(motorSpeeds[3]);
+        // if (DEBUGGING) Serial.print(motorSpeeds[0]);
+        // if (DEBUGGING) Serial.print(motorSpeeds[1]);
+        // if (DEBUGGING) Serial.print(motorSpeeds[2]);
+        // if (DEBUGGING) Serial.print(motorSpeeds[3]);
         /*
         for (int i = 0; i < packet_size; i++) {
             
@@ -370,9 +389,9 @@ void ramp_motors(int target_left, int target_right, int output_left, int output_
         
         if (NEWSETPOINT) break;
 
-        Serial.print(map(output_left, 0, 50, 150, 255));
-        Serial.print(" | ");
-        Serial.println(map(output_right, 0, 50, 150, 255));
+        if (DEBUGGING) Serial.print(map(output_left, 0, 50, 150, 255));
+        if (DEBUGGING) Serial.print(" | ");
+        if (DEBUGGING) Serial.println(map(output_right, 0, 50, 150, 255));
         delay(20);
 
         
@@ -440,7 +459,7 @@ _dir			if (controlReg[DIR] == RIGHT) {
             break;
 
         default:
-            Serial.println("No Command");
+            if (DEBUGGING) Serial.println("No Command");
             break;
         }
 }
