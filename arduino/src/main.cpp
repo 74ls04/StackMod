@@ -16,13 +16,14 @@ void setup()
 
     //Wire.begin(I2C_ADDRESS);                // join i2c bus with address 0x30
     Serial.begin(9600); // start serial for output
-    modbot.begin(0x20);
+    modbot.begin(0x65);
 }
 
 
 
 void loop()
 {
+    modbot.processPacket();
 
-    delay(50);
+    delay(1000);
 }

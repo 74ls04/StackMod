@@ -12,6 +12,7 @@ unsigned char   Modboti2c::ultra_reg[MAX_REGISTER_SIZE];
 unsigned char   Modboti2c::ir_reg[MAX_REGISTER_SIZE];
 char            Modboti2c::packet_buffer[MAX_BYTES];
 boolean         Modboti2c::NEW_PACKET = false;
+boolean         Modboti2c::DEBUGGING = true;
 uint8_t         Modboti2c::i2c_address = 0;
 
 // Structs and enums //////////////////////////////////////////////////
@@ -37,8 +38,8 @@ struct Commands
 
 static Commands commands[] =
     { //Cmd   //Length //Register address
-        "MTR", 8,
         "ARM", 1,
+        "MTR", 8,
         "SRV", 8,
         "ULT", 8,
         "IRS", 8,
@@ -73,16 +74,8 @@ typedef struct
 } large_pck_t;
 
 
-// Public Methods ///////////////////////////////////////////////////////////////
 
-void Modboti2c::begin(uint8_t slave_address)
-{
-    i2c_address = slave_address;
-}
-
-// Private Methods //////////////////////////////////////////////////////////////
-
-void Modboti2c::receiveEvent(int howMany)
+void receiveEvent(int howMany)
 {
     static boolean receiving = false;
     static byte index = 0;
@@ -90,7 +83,7 @@ void Modboti2c::receiveEvent(int howMany)
     char endMarker = '}';
     char inByte;
 
-    while (Wire.available() > 0 && NEW_PACKET == false)
+    while (Wire.available() > 0 &&  Modboti2c::NEW_PACKET == false)
     {
 
         inByte = Wire.read();
@@ -99,7 +92,7 @@ void Modboti2c::receiveEvent(int howMany)
         {
             if (inByte != endMarker)
             {
-                packet_buffer[index] = inByte;
+                Modboti2c::packet_buffer[index] = inByte;
                 index++;
                 if (index >= MAX_BYTES)
                 {
@@ -108,19 +101,34 @@ void Modboti2c::receiveEvent(int howMany)
             }
             else
             {
-                packet_buffer[index] = '\0'; // terminate the string
+                Modboti2c::packet_buffer[index] = '\0'; // terminate the string
                 receiving = false;
                 index = 0;
-                NEW_PACKET = true;
+                Modboti2c::NEW_PACKET = true;
             }
         }
         else if (inByte == startMarker)
         {
             receiving = true;
-            memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+            memset(Modboti2c::packet_buffer, 0, MAX_BYTES); // Empty char buffer
         }
     }
+
 }
+
+
+
+// Public Methods ///////////////////////////////////////////////////////////////
+
+void Modboti2c::begin(uint8_t slave_address)
+{
+    i2c_address = slave_address;
+    Wire.begin(slave_address); 
+	Wire.onReceive(receiveEvent); 
+	// Wire.onRequest(requestEvent);
+}
+
+// Private Methods //////////////////////////////////////////////////////////////
 
 /*
 void get_speeds()
@@ -131,10 +139,15 @@ void get_speeds()
     Serial.println((int)motor_speeds->motor_5_speed);
 }
 */
+ int Modboti2c::getMotorSpeed(int motor_number) 
+ {
+    small_pckt_t *motor_speeds = (small_pckt_t *) motors_reg;
+    Serial.println((int)motor_speeds->val_1);
+ }   
 
 void Modboti2c::processPacket()
 {
-
+    //serial.println("HB");
     char data[MAX_REGISTER_SIZE + 1];
 
     if (NEW_PACKET)
@@ -142,21 +155,23 @@ void Modboti2c::processPacket()
         // Clear the packet status
         NEW_PACKET = false;
 
+        serial.println(packet_buffer);
+
         // Validate minimal packet size
         unsigned char packet_size = strlen(packet_buffer);
 
         if (packet_size < 5)
         {
-            serial.print("Invalid packet size ");
+            serial.println("Invalid packet size ");
             return;
         }
 
         // Get target address of packet
-        // byte address = packet_buffer[0];
+        uint8_t address = packet_buffer[0];
 
 
         // Check if command or query
-        // char action = packet_buffer[1];
+        uint8_t action = packet_buffer[1];
 
         // Identify which command was sent
         int cmd;
@@ -167,12 +182,12 @@ void Modboti2c::processPacket()
         }
 
         // Address must match our address
-        /*
-        if (address != I2C_ADDRESS) { 
+        
+        if (address != i2c_address) { 
             if (DEBUGGING) Serial.println("INVALID ADDRESS");
             return;
         }
-        */
+        
 
         switch (cmd)
         {
