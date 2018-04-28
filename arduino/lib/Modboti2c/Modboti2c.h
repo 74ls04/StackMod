@@ -6,7 +6,6 @@
 #define MAX_BYTES 32
 #define MAX_REGISTER_SIZE 32
 
-
 class Modboti2c
 {
   private:
