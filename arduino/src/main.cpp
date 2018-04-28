@@ -1,7 +1,9 @@
 #include "Arduino.h"
-#include <EEPROM.h>
 #include <Wire.h>
 #include <Modboti2c.h>
+
+
+Modboti2c modbot(Serial);
 
 void setup()
 {
@@ -14,9 +16,13 @@ void setup()
 
     //Wire.begin(I2C_ADDRESS);                // join i2c bus with address 0x30
     Serial.begin(9600); // start serial for output
+    modbot.begin(0x20);
 }
+
+
 
 void loop()
 {
+
     delay(50);
 }
