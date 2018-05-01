@@ -1,3 +1,0 @@
-http://forum.arduino.cc/index.php?topic=392779.0
-https://github.com/suryasundarraj/rpi-series/blob/master/i2c_communication/arduino_i2c_1/arduino_i2c_1.ino
-https://github.com/esp8266/Arduino/blob/master/libraries/Wire/Wire.cpp
