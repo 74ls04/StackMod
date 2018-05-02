@@ -1,19 +1,19 @@
 #include "Arduino.h"
 #include <Wire.h>
-#include <Modboti2c.h>
+#include <Stackmodio.h>
 
 
 // Class Variables //////////////////////////////////////////////////
 
 // Data Registers
-unsigned char   Modboti2c::motors_reg[MAX_REGISTER_SIZE];
-unsigned char   Modboti2c::servo_reg[MAX_REGISTER_SIZE];
-unsigned char   Modboti2c::ultra_reg[MAX_REGISTER_SIZE];
-unsigned char   Modboti2c::ir_reg[MAX_REGISTER_SIZE];
-char            Modboti2c::packet_buffer[MAX_BYTES];
-boolean         Modboti2c::NEW_PACKET = false;
-boolean         Modboti2c::DEBUGGING = true;
-uint8_t         Modboti2c::i2c_address = 0;
+unsigned char   StackModIO::motors_reg[MAX_REGISTER_SIZE];
+unsigned char   StackModIO::servo_reg[MAX_REGISTER_SIZE];
+unsigned char   StackModIO::ultra_reg[MAX_REGISTER_SIZE];
+unsigned char   StackModIO::ir_reg[MAX_REGISTER_SIZE];
+char            StackModIO::packet_buffer[MAX_BYTES];
+boolean         StackModIO::NEW_PACKET = false;
+boolean         StackModIO::DEBUGGING = true;
+uint8_t         StackModIO::i2c_address = 0;
 
 // Structs and enums //////////////////////////////////////////////////
 
@@ -83,7 +83,7 @@ void receiveEvent(int howMany)
     char endMarker = '}';
     char inByte;
 
-    while (Wire.available() > 0 &&  Modboti2c::NEW_PACKET == false)
+    while (Wire.available() > 0 &&  StackModIO::NEW_PACKET == false)
     {
 
         inByte = Wire.read();
@@ -92,7 +92,7 @@ void receiveEvent(int howMany)
         {
             if (inByte != endMarker)
             {
-                Modboti2c::packet_buffer[index] = inByte;
+                StackModIO::packet_buffer[index] = inByte;
                 index++;
                 if (index >= MAX_BYTES)
                 {
@@ -101,16 +101,16 @@ void receiveEvent(int howMany)
             }
             else
             {
-                Modboti2c::packet_buffer[index] = '\0'; // terminate the string
+                StackModIO::packet_buffer[index] = '\0'; // terminate the string
                 receiving = false;
                 index = 0;
-                Modboti2c::NEW_PACKET = true;
+                StackModIO::NEW_PACKET = true;
             }
         }
         else if (inByte == startMarker)
         {
             receiving = true;
-            memset(Modboti2c::packet_buffer, 0, MAX_BYTES); // Empty char buffer
+            memset(StackModIO::packet_buffer, 0, MAX_BYTES); // Empty char buffer
         }
     }
 
@@ -120,7 +120,7 @@ void receiveEvent(int howMany)
 
 // Public Methods ///////////////////////////////////////////////////////////////
 
-void Modboti2c::begin(uint8_t slave_address)
+void StackModIO::begin(uint8_t slave_address)
 {
     i2c_address = slave_address;
     Wire.begin(slave_address); 
@@ -139,13 +139,13 @@ void get_speeds()
     Serial.println((int)motor_speeds->motor_5_speed);
 }
 */
- int Modboti2c::getMotorSpeed(int motor_number) 
+ int StackModIO::getMotorSpeed(int motor_number) 
  {
     small_pckt_t *motor_speeds = (small_pckt_t *) motors_reg;
     Serial.println((int)motor_speeds->val_1);
  }   
 
-void Modboti2c::processPacket()
+void StackModIO::processPacket()
 {
     //serial.println("HB");
     char data[MAX_REGISTER_SIZE + 1];

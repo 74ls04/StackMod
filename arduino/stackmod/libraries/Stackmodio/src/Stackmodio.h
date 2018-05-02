@@ -1,12 +1,12 @@
-#ifndef Modboti2c_h
-#define Modboti2c_h
+#ifndef Stackmodio_h
+#define Stackmodio_h
 
 #include "Arduino.h"
 
 #define MAX_BYTES 32
 #define MAX_REGISTER_SIZE 32
 
-class Modboti2c
+class StackModIO
 {
   private:
     static unsigned char motors_reg[];
@@ -21,7 +21,7 @@ class Modboti2c
     Stream& serial;
 
     public:
-        Modboti2c(Stream& s = Serial) : serial(s){}
+        StackModIO(Stream& s = Serial) : serial(s){}
         void begin(uint8_t);
         // static void receiveEvent(int howMany);
         // static void requestEvent();
