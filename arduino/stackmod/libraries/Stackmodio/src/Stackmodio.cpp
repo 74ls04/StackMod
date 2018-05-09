@@ -48,18 +48,30 @@ static Commands commands[] =
         0
     };
 
+
+struct MOTORS {
+	int motor_1;
+	int motor_2;
+	int motor_3;
+	int motor_4;
+	int motor_5;
+	int motor_6;
+	int motor_7;
+	int motor_8;
+};
+
 // typdefs that allor for convenient access to our data registers
 typedef struct
 {
-    unsigned char val_1;
-    unsigned char val_2;
-    unsigned char val_3;
-    unsigned char val_4;
-    unsigned char val_5;
-    unsigned char val_6;
-    unsigned char val_7;
-    unsigned char val_8;
-} small_pckt_t;
+    int motor_1;
+    int motor_2;
+    int motor_3;
+    int motor_4;
+    int motor_5;
+    int motor_6;
+    int motor_7;
+    int motor_8;
+} motors_t;
 
 typedef struct
 {
@@ -138,12 +150,14 @@ void get_speeds()
     Serial.println((int)motor_speeds->motor_1_speed);
     Serial.println((int)motor_speeds->motor_5_speed);
 }
-*/
+
  int StackModIO::getMotorSpeed(int motor_number) 
  {
     small_pckt_t *motor_speeds = (small_pckt_t *) motors_reg;
     Serial.println((int)motor_speeds->val_1);
  }   
+
+ */
 
 void StackModIO::processPacket()
 {
