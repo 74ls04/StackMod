@@ -6,13 +6,17 @@
 // Class Variables //////////////////////////////////////////////////
 
 // Data Registers
-unsigned char   StackModIO::motors_reg[MAX_REGISTER_SIZE];
-unsigned char   StackModIO::servo_reg[MAX_REGISTER_SIZE];
-unsigned char   StackModIO::ultra_reg[MAX_REGISTER_SIZE];
-unsigned char   StackModIO::ir_reg[MAX_REGISTER_SIZE];
-char            StackModIO::packet_buffer[MAX_BYTES];
-boolean         StackModIO::NEW_PACKET = false;
-boolean         StackModIO::DEBUGGING = true;
+byte			StackModIO::motors_reg[MAX_REGISTER_SIZE] = { 0 };
+byte			StackModIO::servo_reg[MAX_REGISTER_SIZE];
+byte			StackModIO::ultra_reg[MAX_REGISTER_SIZE];
+byte			StackModIO::ir_reg[MAX_REGISTER_SIZE];
+char            StackModIO::packet_buffer[MAX_BYTES] = { 0 };
+char            StackModIO::current_command[MAX_BYTES] = { 0 };
+uint8_t			StackModIO::motors[MAX_BYTES] = { 0 };
+
+bool			StackModIO::NEWPACKET = false;
+bool			StackModIO::DEBUGGING = true;
+bool			StackModIO::RECEIVING = false;
 uint8_t         StackModIO::i2c_address = 0;
 
 // Structs and enums //////////////////////////////////////////////////
@@ -87,24 +91,26 @@ typedef struct
 
 
 
-void receiveEvent(int howMany)
+byte StackModIO::receiveData(byte inByte)
 {
-    static boolean receiving = false;
     static byte index = 0;
     char startMarker = '{';
     char endMarker = '}';
-    char inByte;
 
-    while (Wire.available() > 0 &&  StackModIO::NEW_PACKET == false)
+	if (inByte == '\0')
+	{
+		memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+		RECEIVING = false;
+	}
+
+    if (!NEWPACKET)
     {
 
-        inByte = Wire.read();
-
-        if (receiving == true && inByte != startMarker)
+        if (RECEIVING && inByte != startMarker)
         {
             if (inByte != endMarker)
             {
-                StackModIO::packet_buffer[index] = inByte;
+                packet_buffer[index] = inByte;
                 index++;
                 if (index >= MAX_BYTES)
                 {
@@ -113,19 +119,23 @@ void receiveEvent(int howMany)
             }
             else
             {
-                StackModIO::packet_buffer[index] = '\0'; // terminate the string
-                receiving = false;
+                packet_buffer[index] = '\0'; // terminate the string
+				memcpy(current_command, packet_buffer, sizeof(packet_buffer));
+				memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+                RECEIVING = false;
                 index = 0;
-                StackModIO::NEW_PACKET = true;
+                NEWPACKET = true;
             }
         }
         else if (inByte == startMarker)
         {
-            receiving = true;
-            memset(StackModIO::packet_buffer, 0, MAX_BYTES); // Empty char buffer
+            RECEIVING = true;
+            memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
         }
     }
 
+	if (NEWPACKET) processPacket();
+	return inByte;
 }
 
 
@@ -136,8 +146,31 @@ void StackModIO::begin(uint8_t slave_address)
 {
     i2c_address = slave_address;
     Wire.begin(slave_address); 
-	Wire.onReceive(receiveEvent); 
+	// Wire.onReceive(receiveEvent); 
 	// Wire.onRequest(requestEvent);
+}
+
+void StackModIO::setMotorSpeed(uint8_t motor_number, byte speed)
+{
+	if (motor_number > 0 && motor_number < MAX_REGISTER_SIZE + 1)
+	{
+		motors_reg[motor_number - 1] = speed;
+	}
+}
+
+void StackModIO::setMotorRange(int min, int max)
+{
+}
+
+int StackModIO::getMotorSpeed(uint8_t motor_number)
+{
+	if (motor_number > 0 && motor_number < MAX_REGISTER_SIZE + 1)
+	{
+		return motors_reg[motor_number - 1];
+	}
+	else {
+		return 0;
+	}
 }
 
 // Private Methods //////////////////////////////////////////////////////////////
@@ -159,92 +192,82 @@ void get_speeds()
 
  */
 
+
 void StackModIO::processPacket()
 {
-    //serial.println("HB");
-    char data[MAX_REGISTER_SIZE + 1];
+	//serial.println("HB");
+	char data[MAX_REGISTER_SIZE + 1];
 
-    if (NEW_PACKET)
-    {
-        // Clear the packet status
-        NEW_PACKET = false;
+	// Clear the packet status
+	NEWPACKET = false;
 
-        serial.println(packet_buffer);
+	//serial.println(packet_buffer);
 
-        // Validate minimal packet size
-        unsigned char packet_size = strlen(packet_buffer);
+	// Validate minimal packet size
+	unsigned char packet_size = strlen(current_command);
 
-        if (packet_size < 5)
-        {
-            serial.println("Invalid packet size ");
-            return;
-        }
+	if (packet_size < 5)
+	{
+		// serial.println("Invalid packet size ");
+		return;
+	}
 
-        // Get target address of packet
-        uint8_t address = packet_buffer[0];
+	// Get target address of packet
+	uint8_t address = current_command[0];
 
 
-        // Check if command or query
-        uint8_t action = packet_buffer[1];
+	// Check if command or query
+	uint8_t action = current_command[1];
 
-        // Identify which command was sent
-        int cmd;
-        for (cmd = 0; commands[cmd].cmd; cmd++)
-        {
-            if (!strncmp(&packet_buffer[2], commands[cmd].cmd, strlen(commands[cmd].cmd)))
-                break;
-        }
+	// Identify which command was sent
+	int cmd;
+	for (cmd = 0; commands[cmd].cmd; cmd++)
+	{
+		if (!strncmp(&current_command[2], commands[cmd].cmd, strlen(commands[cmd].cmd)))
+			break;
+	}
 
-        // Address must match our address
-        
-        if (address != i2c_address) { 
-            if (DEBUGGING) Serial.println("INVALID ADDRESS");
-            return;
-        }
-        
+	// Address must match our address
 
-        switch (cmd)
-        {
-        case MOTOR:
+	if (address != i2c_address) {
+		// if (DEBUGGING) Serial.println("INVALID ADDRESS");
+		return;
+	}
 
-            if (DEBUGGING)
-                serial.println("This is a motor command");
 
-            // Copy packet to temp array and verify length
-            snprintf(data, commands[cmd].data_len + 1, "%s", &packet_buffer[5]);
+	switch (cmd)
+	{
+	case MOTOR:
 
-            if (strlen(data) == commands[cmd].data_len)
-            {
-                memcpy(motors_reg, data, sizeof(data));
+		// if (DEBUGGING)
+			// serial.println("This is a motor command");
 
-                // Clean up all the temp data
-                memset(data, 0, sizeof(data));
-                memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
-            }
-            else
-            {
-                if (DEBUGGING)
-                    serial.println("Invalid motor string length");
-            }
+		// Copy packet to temp array and verify length
+		snprintf(data, commands[cmd].data_len + 1, "%s", &current_command[5]);
 
-            //Serial.println(motors_reg);
-            break;
-        case ULTRASONIC:
-            if (DEBUGGING)
-                serial.println("This is an ultrasonic command");
-            break;
-        default:
-            serial.println("Command not found");
-            break;
-        }
+		if (strlen(data) == commands[cmd].data_len)
+		{
+			memcpy(motors_reg, data, sizeof(data));
 
-        // if (DEBUGGING) Serial.print(motorSpeeds[0]);
-        // if (DEBUGGING) Serial.print(motorSpeeds[1]);
-        // if (DEBUGGING) Serial.print(motorSpeeds[2]);
-        // if (DEBUGGING) Serial.print(motorSpeeds[3]);
-        /*
-        for (int i = 0; i < packet_size; i++) {
-            
-        } */
-    }
+			// Clean up all the temp data
+			memset(data, 0, sizeof(data));
+			// memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+		}
+		else
+		{
+			//if (DEBUGGING)
+				//serial.println("Invalid motor string length");
+		}
+
+		//Serial.println(motors_reg);
+		break;
+	case ULTRASONIC:
+		//if (DEBUGGING)
+			//serial.println("This is an ultrasonic command");
+		break;
+	default:
+		//serial.println("Command not found");
+		break;
+	}
+
 }

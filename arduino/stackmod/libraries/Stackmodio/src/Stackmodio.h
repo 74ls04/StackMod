@@ -8,28 +8,39 @@
 
 class StackModIO
 {
-  private:
-    static unsigned char motors_reg[];
-    static unsigned char servo_reg[];
-    static unsigned char ultra_reg[];
-    static unsigned char ir_reg[];
+private:
+	static byte		motors_reg[];
+	static byte		servo_reg[];
+	static byte		ultra_reg[];
+	static byte		ir_reg[];
+	static uint8_t	motors[];
 
-    static uint8_t i2c_address;
+	static char		packet_buffer[];
 
-    
+	static uint8_t	i2c_address;
 
-    Stream& serial;
+	static bool		NEWPACKET;
+	static bool		DEBUGGING;
+	static bool		RECEIVING;
 
-    public:
-        StackModIO(Stream& s = Serial) : serial(s){}
-        void begin(uint8_t);
-        // static void receiveEvent(int howMany);
-        // static void requestEvent();
-      void processPacket();
-      int getMotorSpeed(int motor_number);
-      static char packet_buffer[];
-      static boolean NEW_PACKET;
-      static boolean DEBUGGING;
+	Stream&			serial;
+
+	void			processPacket();
+
+public:
+	StackModIO(Stream& s = Serial) : serial(s) {}
+	void begin(uint8_t);
+	// static void receiveEvent(int howMany);
+	// static void requestEvent();
+
+
+	void			setMotorSpeed(uint8_t motor_number, byte speed);
+	void			setMotorRange(int min, int max);
+	int				getMotorSpeed(uint8_t motor_number);
+
+	byte			receiveData(byte inByte);
+	static char		current_command[];
+
 };
 
 #endif
