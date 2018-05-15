@@ -33,7 +33,6 @@ public:
 	// static void receiveEvent(int howMany);
 	// static void requestEvent();
 
-
 	void			setMotorSpeed(uint8_t motor_number, byte speed);
 	void			setMotorRange(int min, int max);
 	int				getMotorSpeed(uint8_t motor_number);

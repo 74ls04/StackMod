@@ -97,10 +97,12 @@ byte StackModIO::receiveData(byte inByte)
     char startMarker = '{';
     char endMarker = '}';
 
-	if (inByte == '\0')
+	if (inByte == 0)
 	{
 		memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
 		RECEIVING = false;
+		index = 0;
+		serial.println("Reset Buffer");
 	}
 
     if (!NEWPACKET)
@@ -109,7 +111,11 @@ byte StackModIO::receiveData(byte inByte)
         if (RECEIVING && inByte != startMarker)
         {
             if (inByte != endMarker)
-            {
+            {	
+				serial.print("Byte at index ");
+				serial.print(index);
+				serial.print(" is ");
+				serial.println(inByte);
                 packet_buffer[index] = inByte;
                 index++;
                 if (index >= MAX_BYTES)
@@ -125,12 +131,15 @@ byte StackModIO::receiveData(byte inByte)
                 RECEIVING = false;
                 index = 0;
                 NEWPACKET = true;
+				serial.println("End of packet");
             }
         }
         else if (inByte == startMarker)
         {
             RECEIVING = true;
+			serial.println(packet_buffer);
             memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+			serial.println("Start of packet");
         }
     }
 

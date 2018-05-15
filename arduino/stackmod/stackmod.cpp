@@ -4,7 +4,7 @@
 
 #define I2C_ADDRESS 0x45
 
-StackModIO modbot;
+StackModIO modbot(Serial);
 
 // Prototypes
 void receive_i2c_packet(int numBytes);
@@ -22,6 +22,7 @@ void setup()
     Wire.begin(I2C_ADDRESS);                // join i2c bus with address 0x30
 	Wire.onReceive(receive_i2c_packet);
     Serial.begin(9600); // start serial for output
+	Serial.println("Beginning program");
 }
 
 
@@ -35,9 +36,18 @@ void loop()
 
 void receive_serial_packet() {
 	byte serByte;
+	boolean active = false;
 
 	while (Serial.available() > 0) {
+		active = true;
 		serByte = modbot.receiveData(Serial.read());
+	}
+
+	if (active)
+	{
+		serByte = modbot.receiveData(0);
+		active = false;
+		Serial.println("Packet received");
 	}
 }
 
@@ -46,8 +56,9 @@ void receive_i2c_packet(int numBytes) {
 	byte inByte;
 
 	// if (Serial.available() > 0) {
-
 	while (Wire.available() > 0) {
 		inByte = modbot.receiveData(Wire.read());
 	}
+
+	//byte close = modbot.receiveData('\0');
 }
