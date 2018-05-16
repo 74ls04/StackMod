@@ -63,23 +63,23 @@ enum Motor_cmd {
 };
 
 /**** Prototypes ****/
-void set_dir(Motor_cmd motor, Motor_cmd direction);
-void forward_dir();
-void back_dir();
-void turn_left_dir();
-void turn_right_dir();
-void set_brake();
+void setDir(Motor_cmd motor, Motor_cmd direction);
+void forwardDir();
+void backDir();
+void turnLeftDir();
+void turnRightDir();
+void setBrake();
 void drive();
 void ramp_motors(int target_left, int target_right, int output_left, int output_right);
 
 void parse_cmd(int command);
 void store_settings(int ramp, int slowSetpoint, int medSetpoint, int fastSetpoint);
 void read_settings();
-void configure_pins();
+void configurePins();
 
 int calculate_checksum(String packet);
 void process_packet();
-void receive_i2c_packet(int numBytes);
+void receivei2cPacket(int numBytes);
 
 /**** Control Register ****/
 char controlReg[CTRL_REG_SIZE];
@@ -108,7 +108,7 @@ boolean MOTORSENABLED = false;
 
 void setup() {
     
-    configure_pins();
+    configurePins();
 
     // Change PWM frequency to 31250 
     // https://playground.arduino.cc/Main/TimerPWMCheatsheet
@@ -121,11 +121,11 @@ void setup() {
     memset(motorSpeeds, 0, sizeof(motorSpeeds)); // Reset speed values
 
     Wire.begin(I2C_ADDRESS);                // join i2c bus with address 0x30
-    Wire.onReceive(receive_i2c_packet); // register event
+    Wire.onReceive(receivei2cPacket); // register event
     Serial.begin(9600);           // start serial for output
 }
 
-void configure_pins() {
+void configurePins() {
     pinMode(LF_1, OUTPUT);
     pinMode(LF_2, OUTPUT);
     pinMode(LB_1, OUTPUT);
@@ -140,7 +140,7 @@ void configure_pins() {
     pinMode(M4, OUTPUT);
 }
 
-void receive_serial_packet() {
+void receiveSerialPacket() {
     static boolean receiving = false;
     static byte index = 0;
     char startMarker = '{';
@@ -173,7 +173,7 @@ void receive_serial_packet() {
     }
 }
 
-void receive_i2c_packet(int numBytes) {
+void receivei2cPacket(int numBytes) {
     static boolean receiving = false;
     static byte index = 0;
     char startMarker = '{';
@@ -208,7 +208,7 @@ void receive_i2c_packet(int numBytes) {
 
 
 void loop() {
-    receive_serial_packet();
+    receiveSerialPacket();
     process_packet();
 
     delay(50);
@@ -253,31 +253,31 @@ void process_motor_speed(int left_speed, int right_speed) {
 
     // Set motor directions
     if (left_adjusted_speed < 0) {
-        set_dir(LEFT, REVERSE);
+        setDir(LEFT, REVERSE);
         if (DEBUGGING) Serial.println("Reverse");
     }
 
     if (left_adjusted_speed == 0) {
-        set_dir(LEFT, STOP);
+        setDir(LEFT, STOP);
     }
 
     if (left_adjusted_speed > 0) {
         if (DEBUGGING) Serial.println("Forward");
-        set_dir(LEFT, FORWARD);
+        setDir(LEFT, FORWARD);
     }
 
     if (right_adjusted_speed < 0) {
-        set_dir(RIGHT, REVERSE);
+        setDir(RIGHT, REVERSE);
         if (DEBUGGING) Serial.println("Reverse");
     }
 
     if (right_adjusted_speed == 0) {
-        set_dir(RIGHT, STOP);
+        setDir(RIGHT, STOP);
     }
 
     if (right_adjusted_speed > 0) {
         if (DEBUGGING) Serial.println("Forward");
-        set_dir(RIGHT, FORWARD);
+        setDir(RIGHT, FORWARD);
     }
 
     ramp_motors(abs(left_adjusted_speed), abs(right_adjusted_speed), left_current_output, right_current_output);
@@ -466,7 +466,7 @@ _dir			if (controlReg[DIR] == RIGHT) {
 */
 
 
-void set_dir(Motor_cmd motor, Motor_cmd direction) {
+void setDir(Motor_cmd motor, Motor_cmd direction) {
 
     switch (motor) {
         case LEFT:
@@ -508,7 +508,7 @@ void set_dir(Motor_cmd motor, Motor_cmd direction) {
     }
 }
 
-void forward_dir() {
+void forwardDir() {
     digitalWrite(LB_1, 0);
     digitalWrite(LB_2, 1);
     digitalWrite(LF_1, 0);
@@ -520,7 +520,7 @@ void forward_dir() {
     digitalWrite(RF_2, 0);
 }
 
-void back_dir() {
+void backDir() {
     digitalWrite(LB_1, 1);
     digitalWrite(LB_2, 0);
     digitalWrite(LF_1, 1);
@@ -532,7 +532,7 @@ void back_dir() {
     digitalWrite(RF_2, 1);
 }
 
-void turn_left_dir() {
+void turnLeftDir() {
     digitalWrite(LB_1, 1);
     digitalWrite(LB_2, 0);
     digitalWrite(LF_1, 1);
@@ -544,7 +544,7 @@ void turn_left_dir() {
     digitalWrite(RF_2, 0);
 }
 
-void turn_right_dir() {
+void turnRightDir() {
     digitalWrite(LB_1, 0);
     digitalWrite(LB_2, 1);
     digitalWrite(LF_1, 0);
@@ -556,7 +556,7 @@ void turn_right_dir() {
     digitalWrite(RF_2, 1);
 }
 
-void set_brake() {
+void setBrake() {
     digitalWrite(LB_1, 1);
     digitalWrite(LB_2, 1);
     digitalWrite(LF_1, 1);
