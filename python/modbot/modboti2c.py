@@ -9,9 +9,6 @@ START               = 0x7B
 END                 = 0x7D
 MOTOR               = 0x32
 
-
-
-
 class Modboti2c(object):
     """Modbot Protocol Python Implementation"""
 
@@ -24,8 +21,15 @@ class Modboti2c(object):
         self.address = address
 
     def set_motor(self, motor, value):
-        self._device.writeList(MOTOR, [START, self.address, "$", 'M', 'T', 'R', motor, value, '}'])
+        packet_start = [START, self.address, I2C_MASTER_ADDRESS, "$", 'M', 'T', 'R', str(motor)]
+        val = list(str(abs(value)).zfill(3))
+        if value < 0:
+            packet_start.append('-')
+        else:
+            packet_start.append('+')
 
+        packet_start = packet_start + val
+        packet_start.append(END)
+        print packet_start
+        self._device.writeList(MOTOR, packet_start)
 
-arduino_1 = Modboti2c(address=0x65)
-arduino_1.set_motor(66, 100)

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # coding: Latin-1
 
+from modboti2c import Modboti2c
 import pygame
 import math
 import os
+import time
 global joystick
-
 
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
@@ -13,6 +14,10 @@ axisR2 = 4                          # Joystick axis to read for up / down positi
 axisL2 = 6
 axisLeftRight = 2                        # Left joystick
 axisUpDown = 5                       # Right joystick
+
+last_left = 0
+last_right = 0
+
 
 def ps4_init():
     global joystick
@@ -58,6 +63,9 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     return rightMin + (valueScaled * rightSpan)
 
 
+arduino_1 = Modboti2c(address=0x45)
+
+
 def steering(x, y):
     # convert to polar
     r = math.hypot(x, y)
@@ -78,8 +86,8 @@ def steering(x, y):
     left = max(-1, min(left, 1))
     right = max(-1, min(right, 1))
 
-    left = translate(left, -1, 1, 0, 200)
-    right = translate(right, -1, 1, 0, 200)
+    left = translate(left, -1, 1, -255, 255)
+    right = translate(right, -1, 1, -255, 255)
     return int(left), int(right)
 
 
@@ -88,6 +96,7 @@ ps4_init()
 
 while True:
     # EVENT PROCESSING STEP
+    time.sleep(.2)
     for event in pygame.event.get():  # User did something
         # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
         if event.type == pygame.JOYBUTTONDOWN:
@@ -95,5 +104,19 @@ while True:
         elif event.type == pygame.JOYAXISMOTION:
             x_axis = -joystick.get_axis(axisLeftRight)
             y_axis = -joystick.get_axis(axisUpDown)
-            (x, y) = steering(y_axis, x_axis)
-            print("{} | {}".format(x, y))
+            (left, right) = steering(y_axis, x_axis)
+
+            if left != last_left:
+                arduino_1.set_motor(1, left)
+                last_left = left
+                print left
+
+            if right != last_right:
+                arduino_1.set_motor(2, right)
+                last_right = right
+                print right
+
+
+            #print("{} | {}".format(left, right))
+            #
+            #

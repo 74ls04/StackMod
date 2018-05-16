@@ -1,5 +1,5 @@
-C:\Users\paul.bupe\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\drv.el5\stackmod.cpp.o: \
- C:\modbot\arduino\stackmod\stackmod.cpp \
+C:\Users\Main\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\Debug\stackmod.cpp.o: \
+ A:\Programs\Development\modbot\arduino\stackmod\stackmod.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \
@@ -14,4 +14,4 @@ C:\Users\paul.bupe\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\drv.el5\s
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\eightanaloginputs/../standard/pins_arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src/Wire.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Stream.h \
- C:\modbot\arduino\stackmod\libraries\Stackmodio\src/Stackmodio.h
+ A:\Programs\Development\modbot\arduino\stackmod\libraries\Stackmodio\src/Stackmodio.h

@@ -1,4 +1,4 @@
-C:\Users\paul.bupe\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\drv.el5\core\CDC.cpp.o: \
+C:\Users\Main\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\Debug\core\CDC.cpp.o: \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\CDC.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\USBAPI.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h \

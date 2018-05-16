@@ -6,13 +6,13 @@
 // Class Variables //////////////////////////////////////////////////
 
 // Data Registers
-byte			StackModIO::motors_reg[MAX_REGISTER_SIZE] = { 0 };
+int				StackModIO::motors_reg[MAX_MODULES] = { 0 };
 byte			StackModIO::servo_reg[MAX_REGISTER_SIZE];
 byte			StackModIO::ultra_reg[MAX_REGISTER_SIZE];
 byte			StackModIO::ir_reg[MAX_REGISTER_SIZE];
 char            StackModIO::packet_buffer[MAX_BYTES] = { 0 };
 char            StackModIO::current_command[MAX_BYTES] = { 0 };
-uint8_t			StackModIO::motors[MAX_BYTES] = { 0 };
+int				StackModIO::motors[MAX_MODULES] = { 0 };
 
 bool			StackModIO::NEWPACKET = false;
 bool			StackModIO::DEBUGGING = true;
@@ -21,38 +21,21 @@ uint8_t         StackModIO::i2c_address = 0;
 
 // Structs and enums //////////////////////////////////////////////////
 
-// Available commands
-enum Cmd_ids
-{
-    ARM_MOTORS,
-    MOTOR,
-    SERVO,
-    ULTRASONIC,
-    IR,
-    DIGITAL,
-    ANALOG,
-    NUM_COMMANDS
-};
 
-struct Commands
-{
-    char *cmd;              // cmd
-    unsigned char data_len; // length
-};
-
-static Commands commands[] =
+StackModIO::Commands StackModIO::commands[] =
     { //Cmd   //Length //Register address
-        "ARM", 1,
-        "MTR", 8,
-        "SRV", 8,
-        "ULT", 8,
-        "IRS", 8,
-        "DGT", 1,
-        "ANL", 1,
+        "ARM", 1 , 7,
+        "MTR", 11, 7,
+        "SRV", 11, 7,
+        "ULT", 11, 7,
+        "IRS", 11, 7,
+        "DGT", 1 , 7,
+        "ANL", 1 , 7,
         0
     };
 
 
+/*
 struct MOTORS {
 	int motor_1;
 	int motor_2;
@@ -89,7 +72,7 @@ typedef struct
     unsigned short val_8 : 16;
 } large_pck_t;
 
-
+*/
 
 byte StackModIO::receiveData(byte inByte)
 {
@@ -102,7 +85,7 @@ byte StackModIO::receiveData(byte inByte)
 		memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
 		RECEIVING = false;
 		index = 0;
-		serial.println("Reset Buffer");
+		// serial.println("Reset Buffer");
 	}
 
     if (!NEWPACKET)
@@ -112,10 +95,10 @@ byte StackModIO::receiveData(byte inByte)
         {
             if (inByte != endMarker)
             {	
-				serial.print("Byte at index ");
-				serial.print(index);
-				serial.print(" is ");
-				serial.println(inByte);
+				// serial.print("Byte at index ");
+				// serial.print(" is ");
+				// serial.print(index);
+				// serial.println(inByte);
                 packet_buffer[index] = inByte;
                 index++;
                 if (index >= MAX_BYTES)
@@ -131,15 +114,13 @@ byte StackModIO::receiveData(byte inByte)
                 RECEIVING = false;
                 index = 0;
                 NEWPACKET = true;
-				serial.println("End of packet");
             }
         }
         else if (inByte == startMarker)
         {
             RECEIVING = true;
-			serial.println(packet_buffer);
             memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
-			serial.println("Start of packet");
+			// serial.println("Start of packet");
         }
     }
 
@@ -159,9 +140,9 @@ void StackModIO::begin(uint8_t slave_address)
 	// Wire.onRequest(requestEvent);
 }
 
-void StackModIO::setMotorSpeed(uint8_t motor_number, byte speed)
+void StackModIO::setMotorSpeed(uint8_t motor_number, int speed)
 {
-	if (motor_number > 0 && motor_number < MAX_REGISTER_SIZE + 1)
+	if (motor_number > 0 && motor_number < MAX_MODULES + 1)
 	{
 		motors_reg[motor_number - 1] = speed;
 	}
@@ -173,7 +154,7 @@ void StackModIO::setMotorRange(int min, int max)
 
 int StackModIO::getMotorSpeed(uint8_t motor_number)
 {
-	if (motor_number > 0 && motor_number < MAX_REGISTER_SIZE + 1)
+	if (motor_number > 0 && motor_number < MAX_MODULES + 1)
 	{
 		return motors_reg[motor_number - 1];
 	}
@@ -205,12 +186,14 @@ void get_speeds()
 void StackModIO::processPacket()
 {
 	//serial.println("HB");
-	char data[MAX_REGISTER_SIZE + 1];
-
+	char		data[MAX_REGISTER_SIZE + 1];
+	uint8_t		module_number = 0;
+	bool		forward = true;
+	int			val = 0;
 	// Clear the packet status
 	NEWPACKET = false;
 
-	//serial.println(packet_buffer);
+	//serial.println(current_command);
 
 	// Validate minimal packet size
 	unsigned char packet_size = strlen(current_command);
@@ -222,17 +205,17 @@ void StackModIO::processPacket()
 	}
 
 	// Get target address of packet
-	uint8_t address = current_command[0];
+	uint8_t address = current_command[1];
 
 
 	// Check if command or query
-	uint8_t action = current_command[1];
+	uint8_t action = current_command[2];
 
 	// Identify which command was sent
 	int cmd;
 	for (cmd = 0; commands[cmd].cmd; cmd++)
 	{
-		if (!strncmp(&current_command[2], commands[cmd].cmd, strlen(commands[cmd].cmd)))
+		if (!strncmp(&current_command[3], commands[cmd].cmd, strlen(commands[cmd].cmd)))
 			break;
 	}
 
@@ -240,7 +223,7 @@ void StackModIO::processPacket()
 
 	if (address != i2c_address) {
 		// if (DEBUGGING) Serial.println("INVALID ADDRESS");
-		return;
+		// return;
 	}
 
 
@@ -248,12 +231,25 @@ void StackModIO::processPacket()
 	{
 	case MOTOR:
 
+		// @A$MTR1+255
+
 		// if (DEBUGGING)
-			// serial.println("This is a motor command");
+
+		if (action == COMMAND && (strlen(current_command) == commands[cmd].cmd_len)) {
+			//serial.println("This is a motor command");
+			if (sscanf(&current_command[6], "%d%d", &module_number, &val) == 2)
+			{
+				//serial.println(module_number);
+				//serial.println(val);
+				setMotorSpeed(module_number, val);
+			}
+
+		}
 
 		// Copy packet to temp array and verify length
-		snprintf(data, commands[cmd].data_len + 1, "%s", &current_command[5]);
+		//snprintf(data, commands[cmd].data_len + 1, "%s", &current_command[5]);
 
+		/*
 		if (strlen(data) == commands[cmd].data_len)
 		{
 			memcpy(motors_reg, data, sizeof(data));
@@ -267,7 +263,7 @@ void StackModIO::processPacket()
 			//if (DEBUGGING)
 				//serial.println("Invalid motor string length");
 		}
-
+		*/
 		//Serial.println(motors_reg);
 		break;
 	case ULTRASONIC:
@@ -280,3 +276,4 @@ void StackModIO::processPacket()
 	}
 
 }
+

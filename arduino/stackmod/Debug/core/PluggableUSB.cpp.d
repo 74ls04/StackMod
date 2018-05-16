@@ -1,4 +1,4 @@
-C:\Users\paul.bupe\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\drv.el5\core\PluggableUSB.cpp.o: \
+C:\Users\Main\AppData\Local\Temp\VMBuilds\stackmod\nano_atmega328\Debug\core\PluggableUSB.cpp.o: \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\PluggableUSB.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\USBAPI.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h \
