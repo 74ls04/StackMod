@@ -34,11 +34,8 @@ enum Motor_cmd {
     DISABLE,
     ENABLED,
     DISABLED,
-    MOTOR,
     ENABLE
 };
-
-StackModIO modbot;
 
 // Prototypes
 void receivei2cPacket(int numBytes);
@@ -52,6 +49,7 @@ void turnLeftDir();
 void turnRightDir();
 void setBrake();
 
+StackModIO modbot(Serial);
 
 void setup()
 {
@@ -69,7 +67,7 @@ void setup()
     digitalWrite(SDA, 0);
     digitalWrite(SCL, 0);
 
-    Serial.begin(115200); // start serial for output
+    Serial.begin(9600); // start serial for output
     configurePins();
 }
 
@@ -77,12 +75,12 @@ void setup()
 
 void loop()
 {
-    //receive_serial_packet();
-    drive();
+    receiveSerialPacket();
+    //drive();
     delay(200);
-    Serial.print(modbot.getMotorSpeed(1));
-    Serial.print(" ");
-    Serial.println(modbot.getMotorSpeed(2));
+    //Serial.print(modbot.getMotorSpeed(1));
+    //Serial.print(" ");
+    //Serial.println(modbot.getMotorSpeed(2));
 }
 
 
@@ -149,7 +147,7 @@ void receiveSerialPacket() {
     {
         ser_byte = modbot.receiveData(0); // Reset receive buffer
         ser_active = false;
-        // Serial.println("Packet received");
+        //Serial.println("Packet received");
     }
 }
 

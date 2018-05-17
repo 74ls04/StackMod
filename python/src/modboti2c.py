@@ -3,10 +3,12 @@ from __future__ import division
 import logging
 import time
 import math
+import sys
+
 
 I2C_MASTER_ADDRESS  = 0x70
-START               = 0x7B
-END                 = 0x7D
+START               = '{'
+END                 = '}'
 MOTOR               = 0x32
 
 class Modboti2c(object):
@@ -31,5 +33,9 @@ class Modboti2c(object):
         packet_start = packet_start + val
         packet_start.append(END)
         print packet_start
-        self._device.writeList(MOTOR, packet_start)
+        try:
+            self._device.writeList(MOTOR, packet_start)
+        except:
+            e = sys.exc_info()[0]
+            print("Send Error: %s" % e)
 

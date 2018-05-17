@@ -1,3 +1,4 @@
+#include "Stackmodio.h"
 #include "Arduino.h"
 #include <Stackmodio.h>
 
@@ -76,6 +77,7 @@ typedef struct
 uint8_t StackModIO::receiveData(uint8_t inByte)
 {
     static uint8_t index = 0;
+    static bool CHECKSUM = false;
     char startMarker = '{';
     char endMarker = '}';
 
@@ -84,8 +86,29 @@ uint8_t StackModIO::receiveData(uint8_t inByte)
         memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
         RECEIVING = false;
         index = 0;
-        // serial.println("Reset Buffer");
     }
+
+    
+    if (NEWPACKET && CHECKSUM)
+    {
+        int calculated_checksum = calculateChecksum(packet_buffer);
+        serial.print(inByte);
+        serial.print(" ");
+        serial.println(calculated_checksum);
+        if (calculated_checksum == inByte) {
+            memcpy(current_command, packet_buffer, sizeof(packet_buffer));
+            memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+            processPacket(current_command);
+        }
+        else {
+            memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
+        }
+        CHECKSUM = false;
+        NEWPACKET = false;
+        return inByte;
+    }
+    
+    //{Ae$MTR1+139}Y
 
     if (!NEWPACKET)
     {
@@ -94,10 +117,6 @@ uint8_t StackModIO::receiveData(uint8_t inByte)
         {
             if (inByte != endMarker)
             {   
-                // serial.print("Byte at index ");
-                // serial.print(" is ");
-                // serial.print(index);
-                // serial.println(inByte);
                 packet_buffer[index] = inByte;
                 index++;
                 if (index >= MAX_BYTES)
@@ -108,22 +127,22 @@ uint8_t StackModIO::receiveData(uint8_t inByte)
             else
             {
                 packet_buffer[index] = '\0'; // terminate the string
-                memcpy(current_command, packet_buffer, sizeof(packet_buffer));
-                memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
-                RECEIVING = false;
                 index = 0;
+                RECEIVING = false;
                 NEWPACKET = true;
+                CHECKSUM = true;
+                //serial.println("End of packet");
             }
         }
         else if (inByte == startMarker)
         {
             RECEIVING = true;
             memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
-            // serial.println("Start of packet");
+            //serial.println("Start of packet");
         }
     }
 
-    if (NEWPACKET) processPacket();
+
     return inByte;
 }
 
@@ -182,50 +201,39 @@ void get_speeds()
  */
 
 
-void StackModIO::processPacket()
+
+void StackModIO::processPacket(char *packet)
 {
-    //serial.println("HB");
+
     char        data[MAX_REGISTER_SIZE + 1];
-    uint8_t     module_number = 0;
+    int         module_number = 0;
     bool        forward = true;
     int         val = 0;
     // Clear the packet status
-    NEWPACKET = false;
 
-    //serial.println(current_command);
+    unsigned char packet_size = strlen(packet);
 
-    // Validate minimal packet size
-    unsigned char packet_size = strlen(current_command);
+    if (packet_size < 5) return;  
 
-    if (packet_size < 5)
-    {
-        // serial.println("Invalid packet size ");
-        return;
-    }
-
-    // Get target address of packet
-    uint8_t address = current_command[1];
-
-
-    // Check if command or query
-    uint8_t action = current_command[2];
+    uint8_t address = packet[1]; // Get target address of packet
+    uint8_t action = packet[2]; // Check if command or query
 
     // Identify which command was sent
     int cmd;
     for (cmd = 0; commands[cmd].cmd; cmd++)
     {
-        if (!strncmp(&current_command[3], commands[cmd].cmd, strlen(commands[cmd].cmd)))
+        if (!strncmp(&packet[3], commands[cmd].cmd, strlen(commands[cmd].cmd)))
             break;
     }
 
     // Address must match our address
 
     if (address != i2c_address) {
-        // if (DEBUGGING) Serial.println("INVALID ADDRESS");
+        serial.println("INVALID ADDRESS");
         // return;
     }
 
-
+    
     switch (cmd)
     {
     case MOTOR:
@@ -234,36 +242,16 @@ void StackModIO::processPacket()
 
         // if (DEBUGGING)
 
-        if (action == COMMAND && (strlen(current_command) == commands[cmd].cmd_len)) {
-            //serial.println("This is a motor command");
-            if (sscanf(&current_command[6], "%d%d", &module_number, &val) == 2)
+        if (action == COMMAND && (strlen(packet) == commands[cmd].cmd_len)) {
+            //int v = sscanf(&packet[7], "%d", &val);
+            if (sscanf(&packet[6], "%d%d", &module_number, &val) == 2)
             {
                 //serial.println(module_number);
-                //serial.println(val);
+              //  serial.println(val);
                 setMotorSpeed(module_number, val);
             }
-
         }
-
-        // Copy packet to temp array and verify length
-        //snprintf(data, commands[cmd].data_len + 1, "%s", &current_command[5]);
-
-        /*
-        if (strlen(data) == commands[cmd].data_len)
-        {
-            memcpy(motors_reg, data, sizeof(data));
-
-            // Clean up all the temp data
-            memset(data, 0, sizeof(data));
-            // memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
-        }
-        else
-        {
-            //if (DEBUGGING)
-                //serial.println("Invalid motor string length");
-        }
-        */
-        //Serial.println(motors_reg);
+        
         break;
     case ULTRASONIC:
         //if (DEBUGGING)
@@ -274,5 +262,14 @@ void StackModIO::processPacket()
         break;
     }
 
+    
+}
+
+int StackModIO::calculateChecksum(String packet)
+{
+    int sum = 0;
+    int c = packet.length();
+    for (int i = 0; i < c; i++) { sum += packet[i] - 32; }
+    return (sum % 95) + 32;
 }
 

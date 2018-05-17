@@ -91,7 +91,6 @@ def steering(x, y):
     return int(left), int(right)
 
 
-
 ps4_init()
 
 while True:
@@ -106,16 +105,15 @@ while True:
             y_axis = -joystick.get_axis(axisUpDown)
             (left, right) = steering(y_axis, x_axis)
 
-            if left != last_left:
+            if left != last_left and abs(left - last_left) > 10:
                 arduino_1.set_motor(1, left)
                 last_left = left
-                print left
+                # print left
 
-            if right != last_right:
+            if right != last_right and abs(right - last_right) > 10:
                 arduino_1.set_motor(2, right)
                 last_right = right
-                print right
-
+                # print right
 
             #print("{} | {}".format(left, right))
             #

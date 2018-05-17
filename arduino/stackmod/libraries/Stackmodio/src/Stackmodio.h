@@ -52,8 +52,8 @@ private:
 
     Stream&         serial;
 
-    void            processPacket();
-
+    void            processPacket(char *);
+    int             calculateChecksum(String packet);
 
 
 
