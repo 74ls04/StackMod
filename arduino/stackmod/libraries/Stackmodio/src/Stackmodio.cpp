@@ -92,9 +92,9 @@ uint8_t StackModIO::receiveData(uint8_t inByte)
     if (NEWPACKET && CHECKSUM)
     {
         int calculated_checksum = calculateChecksum(packet_buffer);
-        serial.print(inByte);
-        serial.print(" ");
-        serial.println(calculated_checksum);
+        //serial.print(inByte);
+        //serial.print(" ");
+        //serial.println(calculated_checksum);
         if (calculated_checksum == inByte) {
             memcpy(current_command, packet_buffer, sizeof(packet_buffer));
             memset(packet_buffer, 0, MAX_BYTES); // Empty char buffer
@@ -229,7 +229,7 @@ void StackModIO::processPacket(char *packet)
     // Address must match our address
 
     if (address != i2c_address) {
-        serial.println("INVALID ADDRESS");
+        //serial.println("INVALID ADDRESS");
         // return;
     }
 

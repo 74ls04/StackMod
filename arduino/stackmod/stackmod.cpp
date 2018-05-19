@@ -49,7 +49,7 @@ void turnLeftDir();
 void turnRightDir();
 void setBrake();
 
-StackModIO modbot(Serial);
+StackModIO modbot;
 
 void setup()
 {
@@ -60,7 +60,7 @@ void setup()
     TCCR1B = TCCR1B & 0b11111000 | 0x01;
     TCCR2B = TCCR2B & 0b11111000 | 0x01;
 
-    Wire.begin(I2C_SLAVE_ADDRESS);                // join i2c bus with address 0x30
+    Wire.begin(I2C_SLAVE_ADDRESS);                // join i2c bus 
     Wire.onReceive(receivei2cPacket);
 
     // Disable internal I2C pullups
@@ -76,7 +76,7 @@ void setup()
 void loop()
 {
     receiveSerialPacket();
-    //drive();
+    drive();
     delay(200);
     //Serial.print(modbot.getMotorSpeed(1));
     //Serial.print(" ");

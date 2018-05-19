@@ -1,22 +1,36 @@
 #!/usr/bin/env python
-# coding: Latin-1
 
-from StackModIO import StackModIO
+import os
+import RPi.GPIO as GPIO
+import time
 import pygame
 import math
-import os
-import time
-global joystick
+from StackModIO import StackModIO
 
 os.environ["SDL_VIDEODRIVER"] = "dummy"
+#from tfmini import TFmini
+# port.flushInput()
+# port.flushOutput()
+#lidar = TFmini('/dev/ttyAMA0')
 
+global joystick
+
+modbot = StackModIO(address=0x45)
+# PS4 Controller variables
 axisR2 = 4                          # Joystick axis to read for up / down position
 axisL2 = 6
 axisLeftRight = 2                        # Left joystick
 axisUpDown = 5                       # Right joystick
-
 last_left = 0
 last_right = 0
+
+
+def translate(value, leftMin, leftMax, rightMin, rightMax):
+    # Figure out how 'wide' each range is
+    leftSpan = leftMax - leftMin
+    rightSpan = rightMax - rightMin
+    valueScaled = float(value - leftMin) / float(leftSpan) # Convert the left range into a 0-1 range (float)
+    return rightMin + (valueScaled * rightSpan) # Convert the 0-1 range into a value in the right range.
 
 
 def ps4_init():
@@ -28,17 +42,14 @@ def ps4_init():
         try:
             try:
                 pygame.joystick.init()
-                # Attempt to setup the joystick
-                if pygame.joystick.get_count() < 1:
+                if pygame.joystick.get_count() < 1: # Attempt to setup the joystick
                     pygame.joystick.quit()
                     time.sleep(0.1)
                 else:
-                    # We have a joystick, attempt to initialise it!
-                    joystick = pygame.joystick.Joystick(0)
+                    joystick = pygame.joystick.Joystick(0)  # We have a joystick, attempt to initialise it!
                     break
             except pygame.error:
-                # Failed to connect to the joystick, toggle the LED
-                print 'Failed to connect to the joystick'
+                print 'Failed to connect to the joystick' # Failed to connect to the joystick
                 pygame.joystick.quit()
                 time.sleep(0.1)
         except KeyboardInterrupt:
@@ -48,27 +59,12 @@ def ps4_init():
     joystick.init()
 
 
-def translate(value, leftMin, leftMax, rightMin, rightMax):
-    # Figure out how 'wide' each range is
-    leftSpan = leftMax - leftMin
-    rightSpan = rightMax - rightMin
-
-    # Convert the left range into a 0-1 range (float)
-    valueScaled = float(value - leftMin) / float(leftSpan)
-
-    # Convert the 0-1 range into a value in the right range.
-    return rightMin + (valueScaled * rightSpan)
-
-arduino_1 = StackModIO(address=0x45)
-
-
-def steering(x, y):
+def differential_steering(x, y):
     # convert to polar
     r = math.hypot(x, y)
     t = math.atan2(y, x)
 
-    # rotate by 45 degrees
-    t += math.pi / 4
+    t += math.pi / 4  # rotate by 45 degrees
 
     # back to cartesian
     left = r * math.cos(t)
@@ -82,15 +78,17 @@ def steering(x, y):
     left = max(-1, min(left, 1))
     right = max(-1, min(right, 1))
 
+    # Scale to -255 - 255 range
     left = translate(left, -1, 1, -255, 255)
     right = translate(right, -1, 1, -255, 255)
+
     return int(left), int(right)
 
 
 ps4_init()
 
+
 while True:
-    # EVENT PROCESSING STEP
     for event in pygame.event.get():  # User did something
         # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
         if event.type == pygame.JOYBUTTONDOWN:
@@ -98,18 +96,20 @@ while True:
         elif event.type == pygame.JOYAXISMOTION:
             x_axis = -joystick.get_axis(axisLeftRight)
             y_axis = -joystick.get_axis(axisUpDown)
-            (left, right) = steering(y_axis, x_axis)
+            (left, right) = differential_steering(y_axis, x_axis)
 
             if left != last_left and abs(left - last_left) > 10:
-                arduino_1.set_motor(1, left)
+                modbot.set_motor(1, left)
                 last_left = left
                 # print left
 
             if right != last_right and abs(right - last_right) > 10:
-                arduino_1.set_motor(2, right)
+                modbot.set_motor(2, right)
                 last_right = right
                 # print right
 
             #print("{} | {}".format(left, right))
-            #
-            #
+    # (d, s, q) = lidar.read()
+    # print('Distance: {:5}'.format(d))
+    # print d
+    # time.sleep(.5)

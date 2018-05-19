@@ -5,13 +5,12 @@ import time
 import math
 import sys
 
-
 I2C_MASTER_ADDRESS  = 0x70
 START               = '{'
 END                 = '}'
 MOTOR               = 0x32
 
-class Modboti2c(object):
+class StackModIO(object):
     """Modbot Protocol Python Implementation"""
 
     def __init__(self, address, i2c=None, **kwargs):
@@ -22,19 +21,34 @@ class Modboti2c(object):
         self._device = i2c.get_i2c_device(address, **kwargs)
         self.address = address
 
+    @staticmethod
+    def calculate_checksum(packet):
+        checksum = 0
+        for c in packet:
+            if (c != START) and (c != END):
+
+                try:
+                    checksum += c - 32
+                    print c
+                except TypeError:
+                    checksum += ord(c) - 32
+                    print ord(c)
+        return (checksum % 95) + 32
+
     def set_motor(self, motor, value):
-        packet_start = [START, self.address, I2C_MASTER_ADDRESS, "$", 'M', 'T', 'R', str(motor)]
+        packet = [START, self.address, I2C_MASTER_ADDRESS, '$', 'M', 'T', 'R', str(motor)]
         val = list(str(abs(value)).zfill(3))
         if value < 0:
-            packet_start.append('-')
+            packet.append('-')
         else:
-            packet_start.append('+')
+            packet.append('+')
 
-        packet_start = packet_start + val
-        packet_start.append(END)
-        print packet_start
+        packet = packet + val
+        packet.append(END)
+        packet.append(self.calculate_checksum(packet))
+        print packet
         try:
-            self._device.writeList(MOTOR, packet_start)
+            self._device.writeList(MOTOR, packet)
         except:
             e = sys.exc_info()[0]
             print("Send Error: %s" % e)
