@@ -26,13 +26,10 @@ class StackModIO(object):
         checksum = 0
         for c in packet:
             if (c != START) and (c != END):
-
                 try:
                     checksum += c - 32
-                    print c
                 except TypeError:
                     checksum += ord(c) - 32
-                    print ord(c)
         return (checksum % 95) + 32
 
     def set_motor(self, motor, value):
@@ -46,7 +43,7 @@ class StackModIO(object):
         packet = packet + val
         packet.append(END)
         packet.append(self.calculate_checksum(packet))
-        print packet
+        # print packet
         try:
             self._device.writeList(MOTOR, packet)
         except:

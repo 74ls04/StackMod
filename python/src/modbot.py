@@ -21,8 +21,19 @@ axisR2 = 4                          # Joystick axis to read for up / down positi
 axisL2 = 6
 axisLeftRight = 2                        # Left joystick
 axisUpDown = 5                       # Right joystick
+
 last_left = 0
 last_right = 0
+
+average_size = 10
+left_counter = 0
+left_total = 0
+left_average = 0
+left_vals = [0] * average_size
+right_counter = 0
+right_total = 0
+right_average = 0
+right_vals = [0] * average_size
 
 
 def translate(value, leftMin, leftMax, rightMin, rightMax):
@@ -98,16 +109,54 @@ while True:
             y_axis = -joystick.get_axis(axisUpDown)
             (left, right) = differential_steering(y_axis, x_axis)
 
-            if left != last_left and abs(left - last_left) > 10:
-                modbot.set_motor(1, left)
-                last_left = left
-                # print left
+            # Left
+            left_total = left_total - left_vals[left_counter]
+            left_vals[left_counter] = left
+            left_total = left_total + left_vals[left_counter]
+            left_counter += 1
 
-            if right != last_right and abs(right - last_right) > 10:
-                modbot.set_motor(2, right)
-                last_right = right
-                # print right
+            if left_counter >= average_size:
+                left_counter = 0
 
+            left_average = left_total / average_size
+
+            # Right
+            right_total = right_total - right_vals[right_counter]
+            right_vals[right_counter] = right
+            right_total = right_total + right_vals[right_counter]
+            right_counter += 1
+
+            if right_counter >= average_size:
+                right_counter = 0
+
+            right_average = right_total / average_size
+
+            if abs(left_average - last_left) > 10 or left == 0:
+                #if left_average != last_left:
+                if left == 0 and last_left != left:
+                    # print("Left: %d" % left)
+                    last_left = left
+                    modbot.set_motor(1, left)
+
+                if left != 0 and last_left != left_average:
+                    # print("Left: %d" % left_average)
+                    last_left = left_average
+                    modbot.set_motor(1, left_average)
+
+                # modbot.set_motor(1, left)
+                # print("Left: %d %d" % (left, left_average))
+
+            if abs(right_average - last_right) > 10 or right == 0:
+                #if right_average != last_right:
+                if right == 0 and last_right != right:
+                    # print("Right: %d" % right)
+                    last_right = right
+                    modbot.set_motor(2, right)
+
+                if right != 0 and last_right != right_average:
+                    # print("Right: %d" % right_average)
+                    last_right = right_average
+                    modbot.set_motor(2, right_average)
             #print("{} | {}".format(left, right))
     # (d, s, q) = lidar.read()
     # print('Distance: {:5}'.format(d))

@@ -11,12 +11,14 @@
 #define  LB_2 15    //M2
 #define  RF_1 7     //M3
 #define  RF_2 8     //M3
-#define  RB_1 12    //M4
-#define  RB_2 13    //M4
+#define  RB_1 5     //M4
+#define  RB_2 6     //M4
 #define  M1 3       //M1 PWM
 #define  M2 9       //M2 PWM
 #define  M3 10      //M3 PWM
 #define  M4 11      //M4 PWM
+
+#define SERIALDEBUG false
 
 /**** Enums ****/
 
@@ -43,11 +45,11 @@ void receiveSerialPacket();
 void configurePins();
 void setDir(Motor_cmd motor, Motor_cmd direction);
 void drive();
-void forwardDir();
-void backDir();
-void turnLeftDir();
-void turnRightDir();
-void setBrake();
+//void forwardDir();
+//void backDir();
+//void turnLeftDir();
+//void turnRightDir();
+//void setBrake();
 
 StackModIO modbot;
 
@@ -57,8 +59,8 @@ void setup()
     // Change PWM frequency to 31250
     // https://playground.arduino.cc/Main/TimerPWMCheatsheet
 
-    TCCR1B = TCCR1B & 0b11111000 | 0x01;
-    TCCR2B = TCCR2B & 0b11111000 | 0x01;
+    //TCCR1B = TCCR1B & 0b11111000 | 0x01;
+    //TCCR2B = TCCR2B & 0b11111000 | 0x01;
 
     Wire.begin(I2C_SLAVE_ADDRESS);                // join i2c bus 
     Wire.onReceive(receivei2cPacket);
@@ -75,12 +77,12 @@ void setup()
 
 void loop()
 {
-    receiveSerialPacket();
+    //receiveSerialPacket();
     drive();
     delay(200);
-    //Serial.print(modbot.getMotorSpeed(1));
-    //Serial.print(" ");
-    //Serial.println(modbot.getMotorSpeed(2));
+    //if (SERIALDEBUG) Serial.print(modbot.getMotorSpeed(1));
+    //if (SERIALDEBUG) Serial.print(" ");
+    //if (SERIALDEBUG) Serial.println(modbot.getMotorSpeed(2));
 }
 
 
@@ -88,33 +90,50 @@ void drive() {
     int left_speed = modbot.getMotorSpeed(1);
     int right_speed = modbot.getMotorSpeed(2);
 
+
     // Set motor directions
     if (left_speed < 0) 
     {
         setDir(LEFT, REVERSE);
+        if (SERIALDEBUG) Serial.print("Left Reverse: ");
     } else if (left_speed == 0) 
     {
+        if (SERIALDEBUG) Serial.print("Left Stop: ");
         setDir(LEFT, STOP);
     } else 
     {
+        if (SERIALDEBUG) Serial.print("Left Forward: ");
         setDir(LEFT, FORWARD);
     }
 
     if (right_speed < 0) {
         setDir(RIGHT, REVERSE);
+        if (SERIALDEBUG) Serial.print("Right Reverse: ");
     } else if (right_speed == 0) 
     {
         setDir(RIGHT, STOP);
+        if (SERIALDEBUG) Serial.print("Right Stop: ");
     } else 
     {
         setDir(RIGHT, FORWARD);
+        if (SERIALDEBUG) Serial.print("Right Forward: ");
     }
 
+    int left_adjusted = abs(left_speed) == 0 ? 0 : map(abs(left_speed), 1, 254, 70, 255);
+    int right_adjusted = abs(right_speed) == 0 ? 0 : map(abs(right_speed), 1, 254, 70, 255);
+
+    //left_adjusted = 70;
+    //right_adjusted = 70;
+
+    if (SERIALDEBUG) Serial.print(left_adjusted);
+    if (SERIALDEBUG) Serial.print(" ");
+    if (SERIALDEBUG) Serial.println(right_adjusted);
+
     // Write PWM values
-    analogWrite(M1, abs(left_speed));
-    analogWrite(M2, abs(left_speed));
-    analogWrite(M3, abs(right_speed));
-    analogWrite(M4, abs(right_speed));
+    analogWrite(M1, abs(left_adjusted));
+    analogWrite(M2, abs(left_adjusted));
+    analogWrite(M3, abs(right_adjusted));
+    analogWrite(M4, abs(right_adjusted));
 }
 
 
@@ -147,7 +166,7 @@ void receiveSerialPacket() {
     {
         ser_byte = modbot.receiveData(0); // Reset receive buffer
         ser_active = false;
-        //Serial.println("Packet received");
+        //if (SERIALDEBUG) Serial.println("Packet received");
     }
 }
 
@@ -165,7 +184,7 @@ void receivei2cPacket(int numBytes) {
     {
         i2c_byte = modbot.receiveData(0); // Reset receive buffer
         i2c_active = false;
-        // Serial.println("Packet received");
+        // if (SERIALDEBUG) Serial.println("Packet received");
     }
 }
 
@@ -176,13 +195,13 @@ void setDir(Motor_cmd motor, Motor_cmd direction) {
     switch (motor) {
 
     case LEFT:
-        if (direction == FORWARD) {
+        if (direction == REVERSE) {
             digitalWrite(LB_1, 0);
             digitalWrite(LB_2, 1);
             digitalWrite(LF_1, 0);
             digitalWrite(LF_2, 1);
         }
-        else if (direction == REVERSE) {
+        else if (direction == FORWARD) {
             digitalWrite(LB_1, 1);
             digitalWrite(LB_2, 0);
             digitalWrite(LF_1, 1);
@@ -196,13 +215,13 @@ void setDir(Motor_cmd motor, Motor_cmd direction) {
         }
         break;
     case RIGHT:
-        if (direction == FORWARD) {
+        if (direction == REVERSE) {
             digitalWrite(RB_1, 1);
             digitalWrite(RB_2, 0);
             digitalWrite(RF_1, 1);
             digitalWrite(RF_2, 0);
         }
-        else if (direction == REVERSE) {
+        else if (direction == FORWARD) {
             digitalWrite(RB_1, 0);
             digitalWrite(RB_2, 1);
             digitalWrite(RF_1, 0);
@@ -220,7 +239,7 @@ void setDir(Motor_cmd motor, Motor_cmd direction) {
     }
 }
 
-
+/*
 // Autonomous control functions
 void forwardDir() {
     digitalWrite(LB_1, 0);
@@ -281,3 +300,4 @@ void setBrake() {
     digitalWrite(RF_1, 1);
     digitalWrite(RF_2, 1);
 }
+*/
