@@ -119,21 +119,21 @@ void drive() {
         if (SERIALDEBUG) Serial.print("Right Forward: ");
     }
 
-    int left_adjusted = abs(left_speed) == 0 ? 0 : map(abs(left_speed), 1, 254, 70, 255);
-    int right_adjusted = abs(right_speed) == 0 ? 0 : map(abs(right_speed), 1, 254, 70, 255);
+    //int left_adjusted = abs(left_speed) == 0 ? 0 : map(abs(left_speed), 1, 254, 70, 255);
+    //int right_adjusted = abs(right_speed) == 0 ? 0 : map(abs(right_speed), 1, 254, 70, 255);
 
     //left_adjusted = 70;
     //right_adjusted = 70;
 
-    if (SERIALDEBUG) Serial.print(left_adjusted);
-    if (SERIALDEBUG) Serial.print(" ");
-    if (SERIALDEBUG) Serial.println(right_adjusted);
+    //if (SERIALDEBUG) Serial.print(left_adjusted);
+    //if (SERIALDEBUG) Serial.print(" ");
+    //if (SERIALDEBUG) Serial.println(right_adjusted);
 
     // Write PWM values
-    analogWrite(M1, abs(left_adjusted));
-    analogWrite(M2, abs(left_adjusted));
-    analogWrite(M3, abs(right_adjusted));
-    analogWrite(M4, abs(right_adjusted));
+    analogWrite(M1, abs(left_speed));
+    analogWrite(M2, abs(left_speed));
+    analogWrite(M3, abs(right_speed));
+    analogWrite(M4, abs(right_speed));
 }
 
 

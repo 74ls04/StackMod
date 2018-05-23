@@ -10,13 +10,13 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.5090312">
+    <splitter split-orientation="horizontal" split-proportion="0.3990315">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="StackModIO.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="StackModIO.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/StackModIO.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="617">
+                <state relative-caret-position="586">
                   <caret line="46" column="8" lean-forward="false" selection-start-line="46" selection-start-column="8" selection-end-line="46" selection-end-column="8" />
                   <folding>
                     <element signature="e#1#32#0" expanded="true" />
@@ -25,11 +25,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ps4.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="ps4.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/ps4.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="2024">
-                  <caret line="88" column="0" lean-forward="true" selection-start-line="88" selection-start-column="0" selection-end-line="88" selection-end-column="0" />
+                <state relative-caret-position="756">
+                  <caret line="109" column="4" lean-forward="true" selection-start-line="109" selection-start-column="4" selection-end-line="109" selection-end-column="85" />
                   <folding>
                     <element signature="e#41#74#0" expanded="true" />
                   </folding>
@@ -56,8 +56,8 @@
           <file leaf-file-name="modbot.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/modbot.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="2006">
-                  <caret line="147" column="0" lean-forward="true" selection-start-line="147" selection-start-column="0" selection-end-line="147" selection-end-column="0" />
+                <state relative-caret-position="414">
+                  <caret line="123" column="59" lean-forward="false" selection-start-line="123" selection-start-column="59" selection-end-line="123" selection-end-column="59" />
                   <folding>
                     <element signature="e#23#32#0" expanded="true" />
                   </folding>
@@ -76,16 +76,16 @@
         <option value="$PROJECT_DIR$/modbot/modboti2c.py" />
         <option value="$PROJECT_DIR$/src/modboti2c.py" />
         <option value="$PROJECT_DIR$/src/ps4.py" />
-        <option value="$PROJECT_DIR$/src/modbot.py" />
         <option value="$PROJECT_DIR$/src/StackModIO.py" />
+        <option value="$PROJECT_DIR$/src/modbot.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="801" />
-    <option name="y" value="1" />
-    <option name="width" value="1432" />
-    <option name="height" value="1087" />
+    <option name="x" value="955" />
+    <option name="y" value="7" />
+    <option name="width" value="1567" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -171,7 +171,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="801" y="1" width="1432" height="1087" extended-state="0" />
+    <frame x="955" y="7" width="1567" height="1056" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.11848825" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -252,19 +252,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ps4.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2024">
-          <caret line="88" column="0" lean-forward="true" selection-start-line="88" selection-start-column="0" selection-end-line="88" selection-end-column="0" />
-          <folding>
-            <element signature="e#41#74#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/StackModIO.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="617">
+        <state relative-caret-position="586">
           <caret line="46" column="8" lean-forward="false" selection-start-line="46" selection-start-column="8" selection-end-line="46" selection-end-column="8" />
           <folding>
             <element signature="e#1#32#0" expanded="true" />
@@ -272,10 +262,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/ps4.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="756">
+          <caret line="109" column="4" lean-forward="true" selection-start-line="109" selection-start-column="4" selection-end-line="109" selection-end-column="85" />
+          <folding>
+            <element signature="e#41#74#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/modbot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2006">
-          <caret line="147" column="0" lean-forward="true" selection-start-line="147" selection-start-column="0" selection-end-line="147" selection-end-column="0" />
+        <state relative-caret-position="414">
+          <caret line="123" column="59" lean-forward="false" selection-start-line="123" selection-start-column="59" selection-end-line="123" selection-end-column="59" />
           <folding>
             <element signature="e#23#32#0" expanded="true" />
           </folding>

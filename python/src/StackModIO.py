@@ -43,7 +43,7 @@ class StackModIO(object):
         packet = packet + val
         packet.append(END)
         packet.append(self.calculate_checksum(packet))
-        # print packet
+        print packet
         try:
             self._device.writeList(MOTOR, packet)
         except:

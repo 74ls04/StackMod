@@ -59,6 +59,7 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Convert the 0-1 range into a value in the right range.
     return rightMin + (valueScaled * rightSpan)
 
+
 arduino_1 = StackModIO(address=0x45)
 
 
@@ -87,29 +88,50 @@ def steering(x, y):
     return int(left), int(right)
 
 
-ps4_init()
+def exponential_filter(val, slope):
+    # https://www.chiefdelphi.com/forums/showthread.php?t=88065
+    offset = .23
+    if val > 0:
+        return offset + (1 - offset) * (slope * math.pow(val, 3) + (1 - slope) * val)
+    elif val == 0:
+        return 0
+    else:
+        return -offset + (1 - offset) * (slope * math.pow(val, 3) + (1 - slope) * val)
+
+# ps4_init()
+
+# test_speed = .5
 
 while True:
-    # EVENT PROCESSING STEP
-    for event in pygame.event.get():  # User did something
-        # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
-        if event.type == pygame.JOYBUTTONDOWN:
-            print("Joystick button pressed.")
-        elif event.type == pygame.JOYAXISMOTION:
-            x_axis = -joystick.get_axis(axisLeftRight)
-            y_axis = -joystick.get_axis(axisUpDown)
-            (left, right) = steering(y_axis, x_axis)
+    test_speed = float(raw_input('Val: '))
+    test_speed = exponential_filter(test_speed, 1)
+    arduino_1.set_motor(1,  int(translate(test_speed, -1, 1, -255, 255)))
+    arduino_1.set_motor(2,  int(translate(test_speed, -1, 1, -255, 255)))
+    print("{} | {}".format(test_speed, int(translate(test_speed, -1, 1, -255, 255))))
+    # time.sleep(1)
 
-            if left != last_left and abs(left - last_left) > 10:
-                arduino_1.set_motor(1, left)
-                last_left = left
-                # print left
-
-            if right != last_right and abs(right - last_right) > 10:
-                arduino_1.set_motor(2, right)
-                last_right = right
-                # print right
-
-            #print("{} | {}".format(left, right))
-            #
-            #
+#
+# while True:
+#     # EVENT PROCESSING STEP
+#     for event in pygame.event.get():  # User did something
+#         # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+#         if event.type == pygame.JOYBUTTONDOWN:
+#             print("Joystick button pressed.")
+#         elif event.type == pygame.JOYAXISMOTION:
+#             x_axis = -joystick.get_axis(axisLeftRight)
+#             y_axis = -joystick.get_axis(axisUpDown)
+#             (left, right) = steering(y_axis, x_axis)
+#
+#             if left != last_left and abs(left - last_left) > 10:
+#                 arduino_1.set_motor(1, left)
+#                 last_left = left
+#                 # print left
+#
+#             if right != last_right and abs(right - last_right) > 10:
+#                 arduino_1.set_motor(2, right)
+#                 last_right = right
+#                 # print right
+#
+#             #print("{} | {}".format(left, right))
+#             #
+#             #

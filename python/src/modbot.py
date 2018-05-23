@@ -6,6 +6,8 @@ import time
 import pygame
 import math
 from StackModIO import StackModIO
+import signal
+import sys
 
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 #from tfmini import TFmini
@@ -89,15 +91,28 @@ def differential_steering(x, y):
     left = max(-1, min(left, 1))
     right = max(-1, min(right, 1))
 
-    # Scale to -255 - 255 range
-    left = translate(left, -1, 1, -255, 255)
-    right = translate(right, -1, 1, -255, 255)
+    return left, right
 
-    return int(left), int(right)
 
+def exponential_filter(val, slope):
+    # https://www.chiefdelphi.com/forums/showthread.php?t=88065
+    offset = .23
+    if val > 0:
+        return offset + (1 - offset) * (slope * math.pow(val, 3) + (1 - slope) * val)
+    elif val == 0:
+        return 0
+    else:
+        return -offset + (1 - offset) * (slope * math.pow(val, 3) + (1 - slope) * val)
+
+
+def signal_handler(signal, frame):
+    print('Exiting Modbot')
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 ps4_init()
-
 
 while True:
     for event in pygame.event.get():  # User did something
@@ -105,10 +120,13 @@ while True:
         if event.type == pygame.JOYBUTTONDOWN:
             print("Joystick button pressed.")
         elif event.type == pygame.JOYAXISMOTION:
-            x_axis = -joystick.get_axis(axisLeftRight)
-            y_axis = -joystick.get_axis(axisUpDown)
-            (left, right) = differential_steering(y_axis, x_axis)
+            x_axis = exponential_filter(-joystick.get_axis(axisLeftRight), 1)
+            y_axis = exponential_filter(-joystick.get_axis(axisUpDown), 1)
 
+            (left, right) = differential_steering(y_axis, x_axis)
+            # Scale to -255 - 255 range
+            left = int(translate(left, -1, 1, -255, 255))
+            right = int(translate(right, -1, 1, -255, 255))
             # Left
             left_total = left_total - left_vals[left_counter]
             left_vals[left_counter] = left
