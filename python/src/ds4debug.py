@@ -18,14 +18,14 @@ try:
                 if event.axis in d:
                     if d[event.axis] != round(event.value, 1):
                         # print round(j.get_axis(11), 1)
-                        if event.axis in [6, 7, 8, 11]:
-                            continue
-                        else:
+                        if event.axis in [9]:
                             print(event.axis, round(event.value, 1))
+                        # else:
+
                 d[event.axis] = round(event.value, 1)
                 # print(event.dict, event.joy, event.axis, event.value)
-            elif event.type == pygame.JOYBALLMOTION:
-                print(event.dict, event.joy, event.ball, event.rel)
+            # elif event.type == pygame.JOYBALLMOTION:
+            #     print(event.dict, event.joy, event.ball, event.rel)
             # elif event.type == pygame.JOYBUTTONDOWN:
             #     print(event.dict, event.joy, event.button, 'pressed')
             # elif event.type == pygame.JOYBUTTONUP:
