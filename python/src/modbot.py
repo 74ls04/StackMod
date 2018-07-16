@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import logging
 import RPi.GPIO as GPIO
 import time
 import pygame
@@ -9,173 +10,200 @@ from StackModIO import StackModIO
 import signal
 import sys
 
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
+                    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
 os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 #from tfmini import TFmini
 # port.flushInput()
 # port.flushOutput()
 #lidar = TFmini('/dev/ttyAMA0')
 
-global joystick
+controller = None
 
-modbot = StackModIO(address=0x45)
+stackmodio = StackModIO(address=0x45)
+
 # PS4 Controller variables
-axisR2 = 4                          # Joystick axis to read for up / down position
-axisL2 = 6
-axisLeftRight = 2                        # Left joystick
-axisUpDown = 5                       # Right joystick
+LEFT_ANALOG_X = 0
+LEFT_ANALOG_Y = 1
+RIGHT_ANALOG_X = 2
+RIGHT_ANALOG_Y = 5
+L2_ANALOG = 3
+R2_ANALOG = 4
 
-last_left = 0
-last_right = 0
+DPAD_UP = (0, 1)
+DPAD_DOWN = (0, -1)
+DPAD_LEFT = (-1, 0)
+DPAD_RIGHT = (1, 0)
+BUTTON_CROSS = 1
+BUTTON_CIRCLE = 2
+BUTTON_SQUARE = 0
+BUTTON_TRIANGLE = 3
+BUTTON_L1 = 4
+BUTTON_L2 = 6
+BUTTON_L3 = 10
+BUTTON_R1 = 5
+BUTTON_R2 = 7
+BUTTON_R3 = 11
+BUTTON_SHARE = 8
+BUTTON_OPTIONS = 9
+BUTTON_TRACKPAD = 13
+BUTTON_PS = 12
 
-average_size = 10
-left_counter = 0
-left_total = 0
-left_average = 0
-left_vals = [0] * average_size
-right_counter = 0
-right_total = 0
-right_average = 0
-right_vals = [0] * average_size
+MOTION_Y = 9
+MOTION_X = 10
+MOTION_Z = 11
+ORIENTATION_ROLL = 6
+ORIENTATION_YAW = 8
+ORIENTATION_PITCH = 7
 
 
-def translate(value, leftMin, leftMax, rightMin, rightMax):
-    # Figure out how 'wide' each range is
-    leftSpan = leftMax - leftMin
-    rightSpan = rightMax - rightMin
-    valueScaled = float(value - leftMin) / float(leftSpan) # Convert the left range into a 0-1 range (float)
-    return rightMin + (valueScaled * rightSpan) # Convert the 0-1 range into a value in the right range.
+# PS4 Controller variables
+# exponential_deadband = .23
+# exponential_sensitivity = 1
+x = 0
+y = 0
+
+left_motors_avg = 0
+last_left_motors_pwm = 0
+right_motors_avg = 0
+last_right_motors_pwm = 0
 
 
-def ps4_init():
-    global joystick
-    print 'Waiting for joystick... (press CTRL+C to abort)'
+def init():
+    global controller
     pygame.init()
 
+    try:
+        pygame.joystick.init()
+        if pygame.joystick.get_count() < 1:  # Attempt to setup the joystick
+            logging.error("No controllers found")
+            cleanup()
+        else:
+            controller = pygame.joystick.Joystick(0)  # We have a joystick, attempt to initialise it!
+    except pygame.error:
+        logging.error("Failed to connect to the joystick")  # Failed to connect to the joystick
+        cleanup()
+
+    logging.info("Joystick found")
+    controller.init()
+
+
+def joystick_drive(x, y):
+    """
+
+    :param x:
+    :param y:
+    :return:
+    """
+    global last_left_motors_pwm
+    global last_right_motors_pwm
+    global left_motors_avg
+    global right_motors_avg
+
+    # x_filtered = stackmodio.exponential_filter(exponential_deadband, x, exponential_sensitivity)
+    # y_filtered = stackmodio.exponential_filter(exponential_deadband, y, exponential_sensitivity)
+
+    # (left_motors_pwm, right_motors_pwm) = stackmodio.joystick_to_diff(x, y, -1, 1, -255, 255)
+
+    (left_motors_pwm, right_motors_pwm) = stackmodio.mix_x_y(x, y)
+
+    if (abs(left_motors_pwm - last_left_motors_pwm) > 2) or (abs(right_motors_pwm - last_right_motors_pwm) > 2) \
+            or left_motors_pwm == 0 or right_motors_pwm == 0:
+
+        logging.info("{} {}".format(left_motors_pwm, right_motors_pwm))
+
+        if last_left_motors_pwm != left_motors_pwm:
+            last_left_motors_pwm = left_motors_pwm
+            stackmodio.set_motor(1, left_motors_pwm)
+
+        if last_right_motors_pwm != right_motors_pwm:
+            last_right_motors_pwm = right_motors_pwm
+            stackmodio.set_motor(2, right_motors_pwm)
+        # left_motors_avg = int(stackmodio.exponential_moving_average(left_motors_avg, left_motors_pwm))
+        # right_motors_avg = int(stackmodio.exponential_moving_average(right_motors_avg, right_motors_pwm))
+
+
+        # if abs(left_motors_pwm - last_left_motors_pwm) > 10 or left_motors_pwm == 0:
+        #     if last_left_motors_pwm != left_motors_pwm:
+                # logging.debug("Left: %d" % left_motors_pwm)
+                # last_left_motors_pwm = left_motors_pwm
+                # stackmodio.set_motor(1, left_motors_pwm)
+
+        # if abs(right_motors_pwm - last_right_motors_pwm) > 10 or right_motors_pwm == 0:
+        #     if last_right_motors_pwm != right_motors_pwm:
+        #         logging.debug("Right: %d" % right_motors_pwm)
+        #         last_right_motors_pwm = right_motors_pwm
+        #         stackmodio.set_motor(2, right_motors_pwm)
+
+
+def cleanup():
+    pygame.joystick.quit()
+    logging.error("Exiting")
+    sys.exit(1)
+
+
+def operate():
+    global x
+    global y
+
     while True:
-        try:
-            try:
-                pygame.joystick.init()
-                if pygame.joystick.get_count() < 1: # Attempt to setup the joystick
-                    pygame.joystick.quit()
-                    time.sleep(0.1)
-                else:
-                    joystick = pygame.joystick.Joystick(0)  # We have a joystick, attempt to initialise it!
-                    break
-            except pygame.error:
-                print 'Failed to connect to the joystick' # Failed to connect to the joystick
-                pygame.joystick.quit()
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            # CTRL+C exit, give up
-            print '\nUser aborted'
-    print 'Joystick found'
-    joystick.init()
+        # time.sleep(.1)
+        for event in pygame.event.get():
+            if event.type == pygame.JOYBUTTONDOWN:
+                # if event.button == BUTTON_L1:
+                #     pass
+                pass
+            elif event.type == pygame.JOYBUTTONUP:
+                # if event.button == BUTTON_L1:
+                #     pass
+                pass
+            elif event.type == pygame.JOYAXISMOTION:
+                # print event.axis
+                if (event.axis == RIGHT_ANALOG_Y or event.axis == RIGHT_ANALOG_X) and event.value != 0:
+                    raw_x_axis_value,  raw_y_axis_value = -controller.get_axis(RIGHT_ANALOG_X), \
+                                                          controller.get_axis(RIGHT_ANALOG_Y)
 
 
-def differential_steering(x, y):
-    # convert to polar
-    r = math.hypot(x, y)
-    t = math.atan2(y, x)
+                    # raw_y_axis_value = controller.get_axis(RIGHT_ANALOG_Y) if controller.get_axis(RIGHT_ANALOG_Y) == 0 \
+                    #     else controller.get_axis(RIGHT_ANALOG_Y)
 
-    t += math.pi / 4  # rotate by 45 degrees
+                    # .0039
+                    # Apply 14% dead zone on analog sticks by calcuating the magnitude of the <x,y> vector
+                    magnitude = math.sqrt(raw_x_axis_value ** 2 + raw_y_axis_value ** 2)
+                    deadzone = 0.10
+                    if magnitude < deadzone:
+                        raw_x_axis_value = 0
+                        raw_y_axis_value = 0
+                    # else:
+                    #     raw_x_axis_value = (raw_x_axis_value / magnitude) * ((magnitude - deadzone) / (1 - deadzone))
+                    #     raw_y_axis_value = (raw_y_axis_value / magnitude) * ((magnitude - deadzone) / (1 - deadzone))
 
-    # back to cartesian
-    left = r * math.cos(t)
-    right = r * math.sin(t)
+                    # raw_x_axis_value = round(stackmodio.exponential_filter(.23, raw_x_axis_value, 1), 6)
+                    # raw_y_axis_value = round(stackmodio.exponential_filter(.23, raw_y_axis_value, 1), 6)
 
-    # rescale the new coords
-    left = left * math.sqrt(2)
-    right = right * math.sqrt(2)
+                    max_jitter = .019
+                    # print("{} {}".format(raw_x_axis_value - x, raw_y_axis_value - y))
+                    if abs(raw_x_axis_value - x) > max_jitter or raw_x_axis_value == 0:
+                        x = raw_x_axis_value
 
-    # clamp to -1/+1
-    left = max(-1, min(left, 1))
-    right = max(-1, min(right, 1))
+                    if abs(raw_y_axis_value - y) > max_jitter or raw_y_axis_value == 0:
+                        y = raw_y_axis_value
 
-    return left, right
+                    joystick_drive(x, y)
 
-
-def exponential_filter(val, slope):
-    # https://www.chiefdelphi.com/forums/showthread.php?t=88065
-    offset = .23
-    if val > 0:
-        return offset + (1 - offset) * (slope * math.pow(val, 3) + (1 - slope) * val)
-    elif val == 0:
-        return 0
-    else:
-        return -offset + (1 - offset) * (slope * math.pow(val, 3) + (1 - slope) * val)
+                    # print("{} {}".format(x, y))
 
 
 def signal_handler(signal, frame):
-    print('Exiting Modbot')
-    sys.exit(0)
+    cleanup()
 
 
-signal.signal(signal.SIGINT, signal_handler)
-
-ps4_init()
-
-while True:
-    for event in pygame.event.get():  # User did something
-        # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
-        if event.type == pygame.JOYBUTTONDOWN:
-            print("Joystick button pressed.")
-        elif event.type == pygame.JOYAXISMOTION:
-            x_axis = exponential_filter(-joystick.get_axis(axisLeftRight), 1)
-            y_axis = exponential_filter(-joystick.get_axis(axisUpDown), 1)
-
-            (left, right) = differential_steering(y_axis, x_axis)
-            # Scale to -255 - 255 range
-            left = int(translate(left, -1, 1, -255, 255))
-            right = int(translate(right, -1, 1, -255, 255))
-            # Left
-            left_total = left_total - left_vals[left_counter]
-            left_vals[left_counter] = left
-            left_total = left_total + left_vals[left_counter]
-            left_counter += 1
-
-            if left_counter >= average_size:
-                left_counter = 0
-
-            left_average = left_total / average_size
-
-            # Right
-            right_total = right_total - right_vals[right_counter]
-            right_vals[right_counter] = right
-            right_total = right_total + right_vals[right_counter]
-            right_counter += 1
-
-            if right_counter >= average_size:
-                right_counter = 0
-
-            right_average = right_total / average_size
-
-            if abs(left_average - last_left) > 10 or left == 0:
-                #if left_average != last_left:
-                if left == 0 and last_left != left:
-                    # print("Left: %d" % left)
-                    last_left = left
-                    modbot.set_motor(1, left)
-
-                if left != 0 and last_left != left_average:
-                    # print("Left: %d" % left_average)
-                    last_left = left_average
-                    modbot.set_motor(1, left_average)
-
-                # modbot.set_motor(1, left)
-                # print("Left: %d %d" % (left, left_average))
-
-            if abs(right_average - last_right) > 10 or right == 0:
-                #if right_average != last_right:
-                if right == 0 and last_right != right:
-                    # print("Right: %d" % right)
-                    last_right = right
-                    modbot.set_motor(2, right)
-
-                if right != 0 and last_right != right_average:
-                    # print("Right: %d" % right_average)
-                    last_right = right_average
-                    modbot.set_motor(2, right_average)
-            #print("{} | {}".format(left, right))
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    init()
+    operate()
     # (d, s, q) = lidar.read()
     # print('Distance: {:5}'.format(d))
     # print d
